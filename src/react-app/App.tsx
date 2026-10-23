@@ -277,10 +277,10 @@ function App() {
   async function verifyKeyValue(key:string,slug:string) {
     setKeyResult(""); void trackEvent("key_validate","/key-system");
     try {
-      const result=await apiCall<{valid:boolean;error?:string;code?:string;script?:{name:string;slug:string};expires_at?:string|null;remaining_uses?:number|null}>("validate",{key:key.trim(),script:slug.trim()});
+      const result=await apiCall<{valid:boolean;error?:string;code?:string;script?:{name:string;slug:string};expires_at?:string|null;max_uses?:number|null;use_count?:number;remaining_uses?:number|null}>("validate",{key:key.trim(),script:slug.trim()});
       if(result.valid) {
-        const usage=result.remaining_uses===null||result.remaining_uses===undefined?"Unlimited uses":String(result.remaining_uses)+" uses remaining";
-        setKeyResult("VALID · ACTIVE · NOT EXPIRED · "+(result.script?.name||slug)+" · "+usage+(result.expires_at?" · Expires "+new Date(result.expires_at).toLocaleString():" · No expiry"));
+        const usage=result.max_uses===null||result.max_uses===undefined?"Unlimited uses · used "+String(result.use_count||0)+" time(s)":String(result.remaining_uses??0)+" uses remaining";
+        setKeyResult("VALID · ACTIVE · NOT EXPIRED · AVAILABLE · "+(result.script?.name||slug)+" · "+usage+(result.expires_at?" · Expires "+new Date(result.expires_at).toLocaleString():" · No expiry"));
       } else {
         const reason=result.code==="KEY_EXPIRED"?"EXPIRED":result.code==="KEY_REVOKED"?"REVOKED":result.code==="KEY_LIMIT_REACHED"?"TAKEN · USAGE LIMIT REACHED":result.code==="KEY_NOT_FOUND"?"INVALID · KEY NOT FOUND":"NOT VALID";
         setKeyResult(reason+" · "+(result.error||"Verification failed."));
