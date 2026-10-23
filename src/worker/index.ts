@@ -59,8 +59,14 @@ app.get("/api/scripts/load", async (c) => {
 
   // A normal browser navigation receives a branded protection screen, never the Lua body.
   // Roblox HttpGet requests typically use */* rather than text/html and continue to the loader API.
-  const accept = c.req.header("Accept") || "";
-  if (accept.toLowerCase().includes("text/html")) {
+  const accept = (c.req.header("Accept") || "").toLowerCase();
+  const fetchMode = (c.req.header("Sec-Fetch-Mode") || "").toLowerCase();
+  const fetchDest = (c.req.header("Sec-Fetch-Dest") || "").toLowerCase();
+  const browserNavigation =
+    accept.includes("text/html") ||
+    (fetchMode === "navigate" && (fetchDest === "document" || fetchDest === "iframe"));
+
+  if (browserNavigation) {
     return new Response(browserProtectionPage, {
       status: 200,
       headers: {
