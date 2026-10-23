@@ -359,7 +359,7 @@ function App() {
       const {error}=await supabase.from("scripts").insert(record);
       if(error)throw error;
       const url=window.location.origin+"/api/scripts/load?script="+encodeURIComponent(protectedSlug);
-      setLoaderCode("-- Protected by Void Development\\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()");
+      setLoaderCode("-- Protected by Void Development\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()");
       setProtectorSlug(protectedSlug);
       setReleaseNotice("Script protected and saved as unpublished. No release or key required.");
       setReleaseName(""); setReleaseSlug(""); setReleaseDescription(""); setReleaseBanner(""); setReleaseVideo(""); setReleaseSource(""); setReleaseStatus("draft");
@@ -382,7 +382,7 @@ function App() {
     const slug=script?.slug||protectorSlug;
     if(!slug) {setNotice("Protect a script first, or enter its saved slug.");return;}
     const url=window.location.origin+"/api/scripts/load?script="+encodeURIComponent(slug);
-    const loader="-- Protected by Void Development\\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()";
+    const loader="-- Protected by Void Development\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()";
     setLoaderCode(loader);setProtectorSlug(slug);setNotice("Keyless loader generated. Anyone with this URL can run the script.");
   }
 
