@@ -74,7 +74,7 @@ function App() {
   const pageTitle: Record<string, string> = { Home: "Your workspace.", Scripts: "Script library.", "Saved scripts": "Your saved scripts.", Editor: "Build something.", Roadmap: "What's shipping.", "Key system": "Access center.", Notifications: "Updates & activity.", Settings: "Make it yours.", Profile: "Your profile.", Admin: "Control room." };
 
   return (
-    <div className={`app theme-${theme} ${reducedMotion ? "reduce-motion" : ""} ${spotlight ? "spotlight-on" : ""}`} style={{ "--accent": accent } as CSSProperties}>
+    <div className={`app theme-${theme} ${reducedMotion ? "reduce-motion" : ""} ${spotlight ? "spotlight-on" : ""}`} style={{ "--accent": accent } as CSSProperties & { "--accent": string } }>
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
       <header className="topbar">
         <button className="brand" onClick={() => setPage("Home")} aria-label="VOID home"><img src={logo} alt="VOID logo" /><span className="brand-word">VOID<span className="brand-dot">.</span></span></button>
