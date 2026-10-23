@@ -135,6 +135,8 @@ function App() {
   const [releaseBanner,setReleaseBanner] = useState("");
   const [releaseVideo,setReleaseVideo] = useState("");
   const [releaseSource,setReleaseSource] = useState("");
+  const [releaseStatus,setReleaseStatus] = useState("working");
+  const [releaseVisibility,setReleaseVisibility] = useState("published");
   const [releaseNotice,setReleaseNotice] = useState("");
   const [editingScriptId,setEditingScriptId] = useState("");
   const [protectorSlug,setProtectorSlug] = useState("");
@@ -243,11 +245,12 @@ function App() {
   },[]);
 
   const filteredScripts = useMemo(() => scripts.filter(s => (s.name+" "+s.slug+" "+(s.category||"")+" "+(s.description||"")).toLowerCase().includes(search.toLowerCase())),[scripts,search]);
-  const visibleScripts = active==="Saved scripts" ? filteredScripts.filter(s=>saved.includes(s.slug)) : filteredScripts;
+  const publicLibraryScripts = filteredScripts.filter(s => s.status === "published" && s.release_status !== "working_on");
+  const visibleScripts = active==="Saved scripts" ? publicLibraryScripts.filter(s=>saved.includes(s.slug)) : publicLibraryScripts;
   const themeStyle = {"--accent":accent} as CSSProperties & {"--accent":string};
   const dedicatedAuthorized = isDedicatedProtector && Boolean(user && isAdmin);
   const userEmail = user?.email||"";
-  const adminTabs = ["Overview","Releases","Key system","Script protector","Lua uploads","Media library","Users","Analytics","Roadmap","Audit logs"];
+  const adminTabs = ["Overview","Releases","Key system","Add scripts","Media library","Users","Analytics","Roadmap","Audit logs"];
 
   async function handleAuth(e:FormEvent<HTMLFormElement>) {
     e.preventDefault(); setAuthBusy(true); setAuthMessage("");
@@ -404,46 +407,37 @@ function App() {
   }
 
   async function saveRelease(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault(); setReleaseNotice(""); setLoaderCode("");
+    e.preventDefault(); setReleaseNotice("");
     if(!user||!isAdmin) { setReleaseNotice("Administrator sign-in is required."); return; }
     if(!releaseName.trim()||!releaseSlug.trim()) { setReleaseNotice("Add a script name and slug."); return; }
     if(!releaseSource.trim()) { setReleaseNotice("Upload a Lua file or paste your source first."); return; }
     if(new TextEncoder().encode(releaseSource).length>10000*1024) { setReleaseNotice("Lua source is too large. Maximum size is 10,000 KB (about 10 MB)."); return; }
-    const baseSlug=slugify(releaseSlug||releaseName);
-    // New protected drafts use a random suffix as an unlisted loader identifier.
-    const protectedSlug=editingScriptId?baseSlug:(baseSlug+"-"+crypto.randomUUID().replace(/-/g,"").slice(0,12));
-    const record={name:releaseName.trim().slice(0,120),slug:protectedSlug,category:releaseCategory.trim().slice(0,80)||"Utility",description:releaseDescription.trim().slice(0,2000)||"Protected script (unpublished)",content:releaseSource,status:"draft",banner_url:releaseBanner.trim()||null,showcase_url:releaseVideo.trim()||null,release_status:"working_on",owner_id:user.id,updated_at:new Date().toISOString()};
+    const now = new Date().toISOString();
+    const baseSlug = slugify(releaseSlug || releaseName);
+    const record = {name:releaseName.trim().slice(0,120),slug:baseSlug,category:releaseCategory.trim().slice(0,80)||"Utility",description:releaseDescription.trim().slice(0,2000)||"Void Development script release",content:releaseSource,status:releaseVisibility,banner_url:releaseBanner.trim()||null,showcase_url:releaseVideo.trim()||null,release_status:releaseStatus,owner_id:user.id,updated_at:now,...(!editingScriptId&&releaseVisibility==="published"?{created_at:now}:{})};
     try {
       if(editingScriptId) {
         const {error}=await supabase.from("scripts").update(record).eq("id",editingScriptId);
         if(error)throw error;
       } else {
-        const {data:existingDraft,error:lookupError}=await supabase.from("scripts").select("id").eq("slug",protectedSlug).eq("owner_id",user.id).eq("status","draft").maybeSingle();
-        if(lookupError)throw lookupError;
-        const saveQuery=existingDraft
-          ? supabase.from("scripts").update(record).eq("id",existingDraft.id)
-          : supabase.from("scripts").insert(record);
-        const {error}=await saveQuery;
+        const {error}=await supabase.from("scripts").insert(record);
         if(error)throw error;
       }
-      const url=window.location.origin+"/protected-load/"+encodeURIComponent(protectedSlug);
-      setLoaderCode("-- Protected by Void Development\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()");
-      setProtectorSlug(protectedSlug);
-      setReleaseNotice("Saved as an unpublished draft. It will not appear in the public script library. Keep the private loader URL secret.");
-      setEditingScriptId(""); setReleaseName(""); setReleaseSlug(""); setReleaseDescription(""); setReleaseBanner(""); setReleaseVideo(""); setReleaseSource("");
-      await refreshScripts(); setAdminTab("Script protector"); setActive("Admin panel");
+      setReleaseNotice(releaseVisibility==="published"?"Script saved and published to the public library.":"Script saved as a draft; it is hidden from the public library.");
+      setEditingScriptId(""); setReleaseName(""); setReleaseSlug(""); setReleaseDescription(""); setReleaseCategory("Utility"); setReleaseBanner(""); setReleaseVideo(""); setReleaseSource(""); setReleaseStatus("working"); setReleaseVisibility("published");
+      await refreshScripts(); setAdminTab("Add scripts"); setActive("Admin panel");
     } catch(error) {
       const dbError = error && typeof error === "object" ? error as { code?: unknown; message?: unknown } : null;
       if (dbError?.code === "23505" || (typeof dbError?.message === "string" && /duplicate key|unique constraint/i.test(dbError.message))) {
         setReleaseNotice("That slug is already used by another script. Choose a different slug.");
       } else {
-        setReleaseNotice("Protection failed: "+messageOf(error));
+        setReleaseNotice("Could not save script: "+messageOf(error));
       }
     }
   }
 
   function editRelease(script:ScriptRecord) {
-    setEditingScriptId(script.id);setReleaseName(script.name);setReleaseSlug(script.slug);setReleaseDescription(script.description||"");setReleaseCategory(script.category||"Utility");setReleaseBanner(script.banner_url||"");setReleaseVideo(script.showcase_url||"");setReleaseSource(script.content||"");setAdminTab("Script protector");setActive("Admin panel");setNotice("");
+    setEditingScriptId(script.id);setReleaseName(script.name);setReleaseSlug(script.slug);setReleaseDescription(script.description||"");setReleaseCategory(script.category||"Utility");setReleaseBanner(script.banner_url||"");setReleaseVideo(script.showcase_url||"");setReleaseSource(script.content||"");setReleaseStatus(["working","patched","not_working"].includes(script.release_status||"")?script.release_status!:"working");setReleaseVisibility(script.status==="published"?"published":"draft");setAdminTab("Add scripts");setActive("Admin panel");setNotice("");
   }
 
   async function uploadLuaFile(e:ChangeEvent<HTMLInputElement>) {
@@ -571,7 +565,7 @@ function App() {
 
         {active==="Script editor"&&<section className="editor-panel panel"><div className="editor-toolbar"><div className="editor-file"><span className="file-dot"/><input value={editorName} onChange={e=>setEditorName(e.target.value)} aria-label="File name"/></div><div className="editor-buttons"><span className="language-badge">LUA</span><button className="button button-ghost button-small" onClick={()=>setEditorCode("")}>Clear</button><button className="button button-light button-small" onClick={()=>{void navigator.clipboard.writeText(editorCode).then(()=>setNotice("Code copied."),()=>setNotice("Select the text and copy it manually."));}}>Copy code ↗</button></div></div><textarea className="code-editor" spellCheck={false} value={editorCode} onChange={e=>setEditorCode(e.target.value)} aria-label="Lua code editor"/><div className="editor-footer"><span><i className="live-pulse"/> Editor ready · {editorCode.split("\n").length} lines</span><span>Lua · UTF-8</span></div>{notice&&<p className="inline-notice">{notice}</p>}<div className="editor-note"><Icon name="shield"/><p><strong>Protected release workflow</strong><br/>Source saved here stays in your editor until you upload it. To publish source for a Roblox client loader, remember that client-executed code can be inspected by the client that receives it.</p></div></section>}
 
-        {active==="Admin panel"&&<section className="admin-layout"><aside className="admin-sidebar panel"><div className="admin-brand"><span className="admin-mark"><Icon name="admin"/></span><div><strong>VOID CONTROL</strong><small>ADMINISTRATION</small></div></div><span className="section-kicker">MANAGEMENT</span>{adminTabs.map((tab)=><button key={tab} className={adminTab===tab?"admin-side-active":""} onClick={()=>{setAdminTab(tab);setNotice("");if(tab==="Users")void loadAdminUsers();if(tab==="Analytics")void loadAnalytics();if(tab==="Media library")void loadMedia();if(tab==="Key system")void loadKeys();if(tab==="Audit logs")void loadAudit();if(tab==="Releases"||tab==="Script protector")void refreshScripts();}}><Icon name={tab==="Overview"?"home":tab==="Releases"?"release":tab==="Key system"?"keys":tab==="Script protector"?"shield":tab==="Lua uploads"?"upload":tab==="Media library"?"media":tab==="Users"?"users":tab==="Analytics"?"chart":tab==="Endpoint verification"?"api":tab==="Roadmap"?"roadmap":"activity"}/>{tab}</button>)}<div className="admin-warning"><Icon name="shield"/><p>Server-verified admin role required for all privileged actions.</p></div></aside><div className="admin-content">
+        {active==="Admin panel"&&<section className="admin-layout"><aside className="admin-sidebar panel"><div className="admin-brand"><span className="admin-mark"><Icon name="admin"/></span><div><strong>VOID CONTROL</strong><small>ADMINISTRATION</small></div></div><span className="section-kicker">MANAGEMENT</span>{adminTabs.map((tab)=><button key={tab} className={adminTab===tab?"admin-side-active":""} onClick={()=>{setAdminTab(tab);setNotice("");if(tab==="Users")void loadAdminUsers();if(tab==="Analytics")void loadAnalytics();if(tab==="Media library")void loadMedia();if(tab==="Key system")void loadKeys();if(tab==="Audit logs")void loadAudit();if(tab==="Releases"||tab==="Add scripts")void refreshScripts();}}><Icon name={tab==="Overview"?"home":tab==="Releases"?"release":tab==="Key system"?"keys":tab==="Add scripts"?"upload":tab==="Media library"?"media":tab==="Users"?"users":tab==="Analytics"?"chart":tab==="Endpoint verification"?"api":tab==="Roadmap"?"roadmap":"activity"}/>{tab}</button>)}<div className="admin-warning"><Icon name="shield"/><p>Server-verified admin role required for all privileged actions.</p></div></aside><div className="admin-content">
           {isAdmin&&active==="Admin panel"&&adminTab==="Script protector"&&<section className="protector-grid"><div className="panel settings-panel"><span className="section-kicker">SCRIPT PROTECTOR</span><h2>Protect a Lua script</h2><p className="muted">Upload or paste source and protect it directly. It is saved as unpublished and does not require a release, banner, or key.</p><form className="release-form" onSubmit={saveRelease}><label className="form-label">SCRIPT NAME<input required value={releaseName} onChange={e=>{setReleaseName(e.target.value);if(!releaseSlug)setReleaseSlug(slugify(e.target.value));}} placeholder="My script"/></label><label className="form-label">SCRIPT SLUG<input required value={releaseSlug} onChange={e=>setReleaseSlug(slugify(e.target.value))} placeholder="my-script"/></label><label className="form-label">LUA SOURCE FILE<input type="file" accept=".lua,.txt,text/plain" onChange={e=>void uploadLuaFile(e)}/></label><label className="form-label">SOURCE CODE<textarea className="source-textarea" value={releaseSource} onChange={e=>setReleaseSource(e.target.value)} rows={10} maxLength={10240000} placeholder="Paste Lua source here (max 10,000 KB)…"/><small className="muted">Maximum source/file size: 10,000 KB (about 10 MB).</small></label><button className="button button-light" type="submit" disabled={!user||!isAdmin}>Protect Script <Icon name="shield"/></button>{!isAdmin&&<p className="muted">Sign in with an administrator account to protect scripts.</p>}{releaseNotice&&<p className="inline-notice">{releaseNotice}</p>}</form></div><div className="panel settings-panel"><span className="section-kicker">GENERATED LOADER</span><h2>Protected loader</h2><p className="muted">The script stays a draft and is excluded from the public library. Keep the generated URL private.</p><label className="form-label">SAVED SCRIPT SLUG<input value={protectorSlug} onChange={e=>setProtectorSlug(slugify(e.target.value))} placeholder="my-script"/></label><button className="button button-light" type="button" onClick={()=>void prepareLoader()}>Generate loadstring</button><textarea className="loader-output" readOnly value={loaderCode} placeholder="Protect a script to generate the loadstring…"/><button className="button button-ghost" disabled={!loaderCode} onClick={()=>void navigator.clipboard.writeText(loaderCode).then(()=>setNotice("Loadstring copied."),()=>setNotice("Copy the loadstring manually."))}>Copy loadstring</button><div className="protected-card protected-card-large"><Icon name="shield"/><strong>THIS SCRIPT IS PROTECTED BY VOID DEVELOPMENT</strong><small>Client-executed source can still be inspected by the client that receives it.</small></div>{notice&&<p className="inline-notice">{notice}</p>}</div></section>}
 
           {isAdmin&&active==="Admin panel"&&adminTab==="Script protector"&&<details className="recent-protects-dropdown"><summary><span><Icon name="history"/> Recent protects</span><span className="recent-protects-count">{scripts.filter(s=>s.status==="draft"||s.release_status==="working_on").length}</span></summary><div className="recent-protects-list">{scripts.filter(s=>s.status==="draft"||s.release_status==="working_on").sort((a,b)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime()).slice(0,10).map(script=><button type="button" className="recent-protect-row" key={script.id} onClick={()=>editRelease(script)}><span className="recent-protect-icon"><Icon name="shield"/></span><span className="recent-protect-info"><strong>{script.name}</strong><small>{script.slug} · {script.updated_at?new Date(script.updated_at).toLocaleString():script.created_at?new Date(script.created_at).toLocaleString():"Date unavailable"}</small></span><span className="recent-protect-edit">Edit ↗</span></button>)}{scripts.filter(s=>s.status==="draft"||s.release_status==="working_on").length===0&&<p className="muted recent-protect-empty">No protected drafts yet. Protect your first Lua script above.</p>}</div></details>}
