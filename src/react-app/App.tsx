@@ -202,7 +202,6 @@ function App() {
 
   const filteredScripts = useMemo(() => scripts.filter(s => (s.name+" "+s.slug+" "+(s.category||"")+" "+(s.description||"")).toLowerCase().includes(search.toLowerCase())),[scripts,search]);
   const visibleScripts = active==="Saved scripts" ? filteredScripts.filter(s=>saved.includes(s.slug)) : filteredScripts;
-  const currentTheme = themes.find(t=>t[0]===themeId)||themes[0];
   const themeStyle = {"--accent":accent} as CSSProperties & {"--accent":string};
   const userEmail = user?.email||"";
   const adminTabs = ["Overview","Releases","Key system","Script protector","Lua uploads","Users","Analytics","Endpoint verification","Roadmap","Audit logs"];
@@ -334,7 +333,6 @@ function App() {
     writeCookie("void_cookie_consent",JSON.stringify(prefs));setCookiePrefs(prefs);setCookieNotice("Your cookie preferences have been saved.");setCookieCustomize(false);
   }
 
-  const iconForPage = (label:string) => navItems.find(i=>i[0]===label)?.[1]||"home";
   const isAuthPage=active==="Sign in"||active==="Sign up";
   const pageTitle:Record<string,string>={"Scripts":"Explore the script library.","Saved scripts":"Your saved collection.","Releases":"Latest releases.","Script editor":"Your code workspace.","Themes":"Your look, your rules.","Script protector":"Publish without exposing source on public pages.","Lua uploads":"Release management.","Key system":"Access verification.","Key history":"Key activity.","Roadmap":"What we’re building.","Notifications":"Updates from Void Development.","Analytics":"Real traffic, not demo numbers.","API & endpoints":"Verify the services powering your workspace.","Activity log":"Your recent workspace activity.","Community":"The creator space.","Changelog":"Product updates.","Help center":"Guides and support.","Profile":"Make your profile yours.","Sessions":"Account security.","Settings":"Workspace preferences.","Admin panel":"Manage users, releases, keys, and protection."};
 
