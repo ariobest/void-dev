@@ -81,8 +81,9 @@ function messageOf(error: unknown) {
 function App() {
   const [themeId,setThemeId] = useState(() => { try { return localStorage.getItem("void-theme") || "spotlight"; } catch { return "spotlight"; } });
   const [accent,setAccent] = useState(() => { try { return localStorage.getItem("void-accent") || "#f5f5f5"; } catch { return "#f5f5f5"; } });
-  const [active,setActive] = useState("Home");
-  const [adminTab,setAdminTab] = useState("Overview");
+  const isDedicatedProtector = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/protected";
+  const [active,setActive] = useState(() => isDedicatedProtector ? "Admin panel" : "Home");
+  const [adminTab,setAdminTab] = useState(() => isDedicatedProtector ? "Script protector" : "Overview");
   const [navOpen,setNavOpen] = useState(false);
   const [session,setSession] = useState<Session|null>(null);
   const [user,setUser] = useState<User|null>(null);
@@ -233,6 +234,7 @@ function App() {
   const filteredScripts = useMemo(() => scripts.filter(s => (s.name+" "+s.slug+" "+(s.category||"")+" "+(s.description||"")).toLowerCase().includes(search.toLowerCase())),[scripts,search]);
   const visibleScripts = active==="Saved scripts" ? filteredScripts.filter(s=>saved.includes(s.slug)) : filteredScripts;
   const themeStyle = {"--accent":accent} as CSSProperties & {"--accent":string};
+  const dedicatedAuthorized = isDedicatedProtector && Boolean(user && isAdmin);
   const userEmail = user?.email||"";
   const adminTabs = ["Overview","Releases","Key system","Script protector","Lua uploads","Media library","Users","Analytics","Roadmap","Audit logs"];
 
@@ -248,7 +250,8 @@ function App() {
         const {error} = await supabase.auth.signInWithPassword({email:email.trim(),password});
         if (error) throw error;
       }
-      setPage("Home");
+      setPage(isDedicatedProtector ? "Admin panel" : "Home");
+      if (isDedicatedProtector) setAdminTab("Script protector");
     } catch (error) { setAuthMessage(messageOf(error)); }
     finally { setAuthBusy(false); }
   }
@@ -478,16 +481,17 @@ function App() {
   const pageTitle:Record<string,string>={"Scripts":"Explore the script library.","Saved scripts":"Your saved collection.","Releases":"Latest releases.","Script editor":"Your code workspace.","Themes":"Your look, your rules.","Script protector":"Publish without exposing source on public pages.","Lua uploads":"Release management.","Key system":"Access verification.","Key history":"Key activity.","Roadmap":"What we’re building.","Notifications":"Updates from Void Development.","Analytics":"Real traffic, not demo numbers.","API & endpoints":"Verify the services powering your workspace.","Activity log":"Your recent workspace activity.","Community":"The creator space.","Changelog":"Product updates.","Help center":"Guides and support.","Profile":"Make your profile yours.","Sessions":"Account security.","Settings":"Workspace preferences.","Admin panel":"Manage users, releases, keys, and protection."};
 
   return (
-    <div className={"app theme-"+themeId+(reducedMotion?" reduce-motion":"")+(spotlight?" spotlight-on":"")} style={themeStyle}>
+    <div className={"app theme-"+themeId+(reducedMotion?" reduce-motion":"")+(spotlight?" spotlight-on":"")+(isDedicatedProtector?" dedicated-protector":"")+(dedicatedAuthorized?" dedicated-authorized":"")} style={themeStyle}>
       <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
-      <header className="topbar">
+      {!isDedicatedProtector&&<header className="topbar">
         <button className="brand" onClick={()=>setPage("Home")} aria-label="Void Development home"><img src={logo} alt="Void Development logo"/><span className="brand-word">Void Development<span className="brand-dot">.</span></span></button>
         <div className="topbar-right"><span className="system-status"><i/> {endpointStatus.startsWith("Online")?"API online":"Workspace"}</span><button className="icon-button notification-button" onClick={()=>setPage("Notifications")} aria-label="Notifications"><Icon name="bell"/><span className="notification-dot"/></button>{user?<button className="profile-chip" onClick={()=>setPage("Profile")}><span className="avatar">{(profileName||userEmail||"V").slice(0,1).toUpperCase()}</span><span>{profileName||userEmail}</span></button>:<button className="button button-light top-login" onClick={()=>{setAuthMode("login");setPage("Sign in");}}>Sign in <Icon name="arrow"/></button>}<button className={"menu-trigger"+(navOpen?" menu-active":"")} onClick={()=>setNavOpen(v=>!v)} aria-expanded={navOpen}><Icon name="menu"/> <span>Navigate</span></button></div>
-      </header>
+      </header>}
 
-      {navOpen&&<><button className="nav-scrim" aria-label="Close navigation" onClick={()=>setNavOpen(false)}/><aside className="nav-drawer"><div className="drawer-heading"><span>VOID DEVELOPMENT · NAVIGATION</span><button className="icon-button" onClick={()=>setNavOpen(false)}><Icon name="close"/></button></div><div className="drawer-links">{navItems.filter(([label])=>!["Script protector","Lua uploads"].includes(label)&&(label!=="Admin panel"||isAdmin)).map(([label,icon])=><button key={label} className={active===label?"drawer-link selected":"drawer-link"} onClick={()=>setPage(label)}><Icon name={icon}/><span>{label}</span>{label==="Themes"&&<span className="drawer-count">35</span>}{label==="Admin panel"&&<span className="admin-label">ADMIN</span>}</button>)}</div><div className="drawer-bottom"><div className="drawer-user"><span className="avatar">{user?(profileName||userEmail||"V").slice(0,1).toUpperCase():"V"}</span><div><strong>{user?profileName||userEmail:"Guest session"}</strong><small>{user?(isAdmin?"Administrator":"Authenticated member"):"Sign in to sync your workspace"}</small></div></div>{user?<button className="drawer-link" onClick={()=>void signOut()}><Icon name="lock"/> Sign out</button>:<button className="drawer-link" onClick={()=>{setAuthMode("login");setPage("Sign in");}}><Icon name="profile"/> Sign in / Sign up</button>}</div></aside></>}
+      {!isDedicatedProtector&&navOpen&&<><button className="nav-scrim" aria-label="Close navigation" onClick={()=>setNavOpen(false)}/><aside className="nav-drawer"><div className="drawer-heading"><span>VOID DEVELOPMENT · NAVIGATION</span><button className="icon-button" onClick={()=>setNavOpen(false)}><Icon name="close"/></button></div><div className="drawer-links">{navItems.filter(([label])=>!["Script protector","Lua uploads"].includes(label)&&(label!=="Admin panel"||isAdmin)).map(([label,icon])=><button key={label} className={active===label?"drawer-link selected":"drawer-link"} onClick={()=>setPage(label)}><Icon name={icon}/><span>{label}</span>{label==="Themes"&&<span className="drawer-count">35</span>}{label==="Admin panel"&&<span className="admin-label">ADMIN</span>}</button>)}</div><div className="drawer-bottom"><div className="drawer-user"><span className="avatar">{user?(profileName||userEmail||"V").slice(0,1).toUpperCase():"V"}</span><div><strong>{user?profileName||userEmail:"Guest session"}</strong><small>{user?(isAdmin?"Administrator":"Authenticated member"):"Sign in to sync your workspace"}</small></div></div>{user?<button className="drawer-link" onClick={()=>void signOut()}><Icon name="lock"/> Sign out</button>:<button className="drawer-link" onClick={()=>{setAuthMode("login");setPage("Sign in");}}><Icon name="profile"/> Sign in / Sign up</button>}</div></aside></>}
 
-      <main className="main-shell">
+      <main className={"main-shell"+(isDedicatedProtector?" main-shell-dedicated":"")}>
+        {isDedicatedProtector&&(!user||!isAdmin)&&active!=="Sign in"&&<section className="dedicated-access-wall panel"><img src={logo} alt="Void Development logo"/><span className="section-kicker">RESTRICTED ADMIN WORKSPACE</span><h1>{user?"Administrator access required":"Sign in to continue"}</h1><p>{user?"This dashboard is limited to accounts with the server-verified admin role. Your account does not have that permission.":"The protected-script dashboard is private. Sign in with your Void Development administrator account to continue."}</p>{user?<button className="button button-ghost" onClick={()=>void signOut()}>Sign out</button>:<button className="button button-light" onClick={()=>{setAuthMode("login");setPage("Sign in");}}>Administrator sign in <Icon name="arrow"/></button>}</section>}
         {active==="Home"&&<section className="hero"><div className="eyebrow"><span className="eyebrow-line"/> SCRIPT MANAGEMENT PLATFORM <span className="eyebrow-pill">VOID DEVELOPMENT</span></div><h1 className="hero-title">Build. Protect. Release.<br/><span className="gradient-title">Your next move starts here.</span></h1><p className="hero-subtitle">A polished workspace for your Lua releases, key verification, and creator tools.<br className="desktop-break"/> One place to manage the entire release flow.</p><div className="hero-actions"><button className="button button-light" onClick={()=>setPage("Scripts")}>Explore Scripts <Icon name="arrow"/></button></div><div className="hero-meta"><span><i className="live-pulse"/> {endpointStatus.toUpperCase()}</span><span className="meta-separator">/</span><span>35 DARK THEMES</span><span className="meta-separator">/</span><span>RESPONSIVE WORKSPACE</span></div></section>}
         {!["Home","Admin panel"].includes(active)&&!isAuthPage&&<section className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line"/> VOID DEVELOPMENT WORKSPACE</div><h1>{pageTitle[active]||active}</h1><p>{active==="Script protector"?"Keep source out of public-facing script cards and generate your site-specific loader.":active==="Analytics"?"Numbers come from recorded, consented visits in your database.":active==="Profile"?"Your public profile details and preferences.":"Connected to your existing Void Development workspace."}</p></div><button className="button button-ghost" onClick={()=>setPage("Home")}>← Home</button></section>}
 
