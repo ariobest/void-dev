@@ -63,8 +63,8 @@ function messageOf(error: unknown) {
 }
 
 function App() {
-  const [themeId,setThemeId] = useState("spotlight");
-  const [accent,setAccent] = useState("#f5f5f5");
+  const [themeId,setThemeId] = useState(() => { try { return localStorage.getItem("void-theme") || "spotlight"; } catch { return "spotlight"; } });
+  const [accent,setAccent] = useState(() => { try { return localStorage.getItem("void-accent") || "#f5f5f5"; } catch { return "#f5f5f5"; } });
   const [active,setActive] = useState("Home");
   const [adminTab,setAdminTab] = useState("Overview");
   const [navOpen,setNavOpen] = useState(false);
@@ -112,10 +112,10 @@ function App() {
   const [endpointStatus,setEndpointStatus] = useState("Checking endpoint…");
   const [apiSample,setApiSample] = useState("POST /functions/v1/script-api\nContent-Type: application/json\nAuthorization: Bearer YOUR_USER_ACCESS_TOKEN\n\n{\n  \"action\": \"validate\",\n  \"script\": \"your-script-slug\",\n  \"key\": \"VOID-XX-XXX-XXXX\"\n}");
   const [auditRows,setAuditRows] = useState<Array<Record<string,unknown>>>([]);
-  const [reducedMotion,setReducedMotion] = useState(false);
-  const [spotlight,setSpotlight] = useState(true);
+  const [reducedMotion,setReducedMotion] = useState(() => { try { return localStorage.getItem("void-motion") === "true"; } catch { return false; } });
+  const [spotlight,setSpotlight] = useState(() => { try { return localStorage.getItem("void-spotlight") !== "false"; } catch { return true; } });
   const [notifications,setNotifications] = useState(true);
-  const [layout,setLayout] = useState("Comfortable");
+  const [layout,setLayout] = useState(() => { try { return localStorage.getItem("void-layout") || "Comfortable"; } catch { return "Comfortable"; } });
   const [profileName,setProfileName] = useState("");
   const [profileBio,setProfileBio] = useState("");
   const [avatarUrl,setAvatarUrl] = useState("");
@@ -127,8 +127,8 @@ function App() {
     try { return JSON.parse(savedCookie) as CookiePrefs; } catch { return null; }
   });
   const [cookieCustomize,setCookieCustomize] = useState(false);
-  const [cookieAnalytics,setCookieAnalytics] = useState(false);
-  const [cookiePersonalization,setCookiePersonalization] = useState(true);
+  const [cookieAnalytics,setCookieAnalytics] = useState(() => cookiePrefs?.analytics ?? false);
+  const [cookiePersonalization,setCookiePersonalization] = useState(() => cookiePrefs?.personalization ?? true);
   const [cookieNotice,setCookieNotice] = useState("");
 
   const setPage = (page:string) => { setActive(page); setNavOpen(false); setNotice(""); };
