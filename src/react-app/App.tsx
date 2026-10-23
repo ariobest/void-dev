@@ -55,6 +55,15 @@ function getSessionId() {
   }
   return id;
 }
+function getKeyClientId() {
+  const storageKey = "void_key_client_id";
+  let id = window.localStorage.getItem(storageKey);
+  if (!id || !/^[a-f0-9]{48}$/i.test(id)) {
+    id = Array.from(crypto.getRandomValues(new Uint8Array(24)), (v) => v.toString(16).padStart(2,"0")).join("");
+    window.localStorage.setItem(storageKey, id);
+  }
+  return id;
+}
 function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80);
 }
@@ -93,6 +102,21 @@ function App() {
   const [keyResult,setKeyResult] = useState("");
   const [newKey,setNewKey] = useState("");
   const [keyRecords,setKeyRecords] = useState<Array<Record<string,unknown>>>([]);
+  const [generationSlug,setGenerationSlug] = useState("");
+  const [keyCountdown,setKeyCountdown] = useState(0);
+  const [keyGenerating,setKeyGenerating] = useState(false);
+  const [generatedKey,setGeneratedKey] = useState("");
+  const [keyGenerationError,setKeyGenerationError] = useState("");
+  const [personalKeys,setPersonalKeys] = useState<Array<{key:string;script:string;expires_at:string;created_at:string}>>(() => {
+    try { const stored=JSON.parse(localStorage.getItem("void_personal_keys")||"[]"); return Array.isArray(stored)?stored:[]; } catch { return []; }
+  });
+  const [adminKeyCount,setAdminKeyCount] = useState(1);
+  const [adminKeyExpiryDays,setAdminKeyExpiryDays] = useState("30");
+  const [adminKeyMaxUses,setAdminKeyMaxUses] = useState("");
+  const [adminKeyLabel,setAdminKeyLabel] = useState("Void Development key");
+  const [adminKeyScriptSlug,setAdminKeyScriptSlug] = useState("");
+  const [generatedAdminKeys,setGeneratedAdminKeys] = useState<Array<{key:string;expires_at:string|null;script:string;label:string}>>([]);
+  const [adminKeyBusy,setAdminKeyBusy] = useState(false);
   const [releaseName,setReleaseName] = useState("");
   const [releaseSlug,setReleaseSlug] = useState("");
   const [releaseDescription,setReleaseDescription] = useState("");
@@ -251,12 +275,46 @@ function App() {
     setSessionNotice(error?error.message:"Password updated successfully."); if(!error)setNewPassword("");
   }
 
-  async function validateKey(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault(); setKeyResult(""); void trackEvent("key_validate","/key-system");
+  async function verifyKeyValue(key:string,slug:string) {
+    setKeyResult(""); void trackEvent("key_validate","/key-system");
     try {
-      const result=await apiCall<{valid:boolean;error?:string;script?:{name:string;slug:string};expires_at?:string|null;remaining_uses?:number|null}>("validate",{key:keyValue.trim(),script:keySlug.trim()});
-      setKeyResult(result.valid?"VALID · "+(result.script?.name||keySlug)+" · "+(result.expires_at?"Expires "+new Date(result.expires_at).toLocaleString():"No expiry"):"Invalid key");
+      const result=await apiCall<{valid:boolean;error?:string;code?:string;script?:{name:string;slug:string};expires_at?:string|null;remaining_uses?:number|null}>("validate",{key:key.trim(),script:slug.trim()});
+      if(result.valid) {
+        const usage=result.remaining_uses===null||result.remaining_uses===undefined?"Unlimited uses":String(result.remaining_uses)+" uses remaining";
+        setKeyResult("VALID · ACTIVE · NOT EXPIRED · "+(result.script?.name||slug)+" · "+usage+(result.expires_at?" · Expires "+new Date(result.expires_at).toLocaleString():" · No expiry"));
+      } else {
+        const reason=result.code==="KEY_EXPIRED"?"EXPIRED":result.code==="KEY_REVOKED"?"REVOKED":result.code==="KEY_LIMIT_REACHED"?"TAKEN · USAGE LIMIT REACHED":result.code==="KEY_NOT_FOUND"?"INVALID · KEY NOT FOUND":"NOT VALID";
+        setKeyResult(reason+" · "+(result.error||"Verification failed."));
+      }
     } catch(error) { setKeyResult(messageOf(error)); }
+  }
+  async function validateKey(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await verifyKeyValue(keyValue,keySlug);
+  }
+
+  async function startKeyGeneration(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if(!generationSlug) { setKeyGenerationError("Choose a published script first."); return; }
+    setKeyGenerating(true); setGeneratedKey(""); setKeyGenerationError(""); setKeyCountdown(20);
+    try {
+      const client_id=getKeyClientId();
+      const started=await apiCall<{token:string;script:string;client_id:string;wait_seconds:number}>("start-key",{script:generationSlug,client_id});
+      const waitSeconds=Math.max(20,Number(started.wait_seconds)||20);
+      const readyAt=Date.now()+waitSeconds*1000;
+      await new Promise<void>(resolve=>{
+        const tick=()=>{const left=Math.max(0,Math.ceil((readyAt-Date.now())/1000));setKeyCountdown(left);if(left===0){window.clearInterval(timer);resolve();}};
+        const timer=window.setInterval(tick,200);
+        tick();
+      });
+      const claimed=await apiCall<{ok:boolean;key:string;expires_at:string;script:string}>("claim-key",{token:started.token,script:started.script,client_id});
+      setGeneratedKey(claimed.key);
+      const entry={key:claimed.key,script:claimed.script,expires_at:claimed.expires_at,created_at:new Date().toISOString()};
+      const updated=[entry,...personalKeys.filter(item=>item.key!==claimed.key)].slice(0,100);
+      setPersonalKeys(updated);
+      try { localStorage.setItem("void_personal_keys",JSON.stringify(updated)); } catch { /* Keep the key visible for this session if storage is unavailable. */ }
+    } catch(error) { setKeyGenerationError(messageOf(error)); }
+    finally { setKeyGenerating(false); setKeyCountdown(0); }
   }
 
   async function loadKeys() {
@@ -265,10 +323,30 @@ function App() {
   }
   async function createKey(e:FormEvent<HTMLFormElement>) {
     e.preventDefault(); setNotice("");
-    const chosen=scripts.find(s=>s.slug===keySlug);
-    if(!chosen?.id) { setNotice("Select a published script before creating a key."); return; }
-    try { const result=await apiCall<{key:string}>("create-key",{script_id:chosen.id,label:"Void Development key",expires_in_days:30,max_uses:null}); setNewKey(result.key); await loadKeys(); }
-    catch(error) { setNotice(messageOf(error)); }
+    if(!user||!isAdmin) { setNotice("Administrator access required."); return; }
+    const chosen=scripts.find(s=>s.slug===adminKeyScriptSlug);
+    if(!chosen?.id) { setNotice("Select a published script before generating keys."); return; }
+    const quantity=Math.max(1,Math.min(100,Math.floor(Number(adminKeyCount)||1)));
+    setAdminKeyBusy(true);
+    const created:Array<{key:string;expires_at:string|null;script:string;label:string}>=[];
+    try {
+      for(let i=0;i<quantity;i++) {
+        const result=await apiCall<{key:string;record:{expires_at:string|null}}>("create-key",{
+          script_id:chosen.id,
+          label:adminKeyLabel.trim().slice(0,80)||"Access key",
+          expires_in_days:adminKeyExpiryDays.trim()===""?null:Number(adminKeyExpiryDays),
+          max_uses:adminKeyMaxUses.trim()===""?null:Number(adminKeyMaxUses)
+        });
+        created.push({key:result.key,expires_at:result.record?.expires_at??null,script:chosen.name,label:adminKeyLabel.trim()||"Access key"});
+      }
+      setNotice("Generated "+created.length+" key"+(created.length===1?"":"s")+".");
+    } catch(error) {
+      setNotice("Generated "+created.length+" of "+quantity+" keys. "+messageOf(error));
+    } finally {
+      setGeneratedAdminKeys(current=>[...created,...current].slice(0,200));
+      setAdminKeyBusy(false);
+      await loadKeys();
+    }
   }
 
   async function saveRelease(e:FormEvent<HTMLFormElement>) {
@@ -365,7 +443,7 @@ function App() {
 
           {adminTab==="Overview"&&<><div className="admin-overview-grid"><div className="stat-card"><span className="section-kicker">SCRIPTS</span><strong>{scripts.length}</strong><small>Connected database</small></div><div className="stat-card"><span className="section-kicker">ADMIN ROLE</span><strong>{isAdmin?"ACTIVE":"DENIED"}</strong><small>Verified through user_roles</small></div><div className="stat-card"><span className="section-kicker">API STATUS</span><strong className="stat-live">{endpointStatus.startsWith("Online")?"ONLINE":"CHECK"}</strong><small>Live health check</small></div></div><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">ADMIN SHORTCUTS</span><h2>Control room</h2></div></div>{[["Releases","Publish scripts, banners, and YouTube showcases."],["Key system","Create, inspect, and revoke keys."],["Lua uploads","Upload source and generate site-specific loaders."],["Users","Review registered emails and manage account access."],["Analytics","View consented real traffic events."],["Endpoint verification","Check the health endpoint and copy API samples."]].map(([tab,desc])=><button className="quick-action" key={tab} onClick={()=>{setAdminTab(tab);if(tab==="Users")void loadAdminUsers();if(tab==="Analytics")void loadAnalytics();if(tab==="Key system")void loadKeys();}}><span><strong>{tab}</strong><small>{desc}</small></span><Icon name="arrow"/></button>)}</div></>}
           {adminTab==="Releases"&&<div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">PUBLISHING</span><h2>Script releases</h2></div><button className="button button-light button-small" onClick={()=>{setEditingScriptId("");setReleaseName("");setReleaseSlug("");setReleaseDescription("");setReleaseSource("");setReleaseBanner("");setReleaseVideo("");setAdminTab("Lua uploads");}}>New release +</button></div>{scripts.map(s=><div className="admin-script-row" key={s.id}>{s.banner_url?<img className="admin-banner-thumb" src={s.banner_url} alt=""/>:<span className="script-symbol">{"</>"}</span>}<div className="admin-script-name"><strong>{s.name}</strong><small>{s.slug} · {s.status||"published"}</small></div><button className="button button-ghost button-small" onClick={()=>editRelease(s)}>Edit</button></div>)}{scripts.length===0&&<p className="muted">No script records found.</p>}</div>}
-          {adminTab==="Key system"&&<><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">KEY CONTROL</span><h2>Create a key</h2></div><button className="button button-ghost button-small" onClick={()=>void loadKeys()}>Refresh keys</button></div><form className="release-form" onSubmit={createKey}><label className="form-label">PUBLISHED SCRIPT<select required value={keySlug} onChange={e=>setKeySlug(e.target.value)}><option value="">Choose a published script</option>{scripts.filter(s=>s.status==="published").map(s=><option key={s.id} value={s.slug}>{s.name}</option>)}</select></label><button className="button button-light">Create 30-day key</button></form>{newKey&&<div className="created-key"><strong>Copy this key now. It will not be shown again in full.</strong><code>{newKey}</code><button className="button button-ghost button-small" onClick={()=>void navigator.clipboard.writeText(newKey)}>Copy key</button></div>}</div><div className="panel admin-table-panel"><h2>Issued keys</h2>{keyRecords.map((k,i)=><div className="admin-script-row" key={String(k.id||i)}><div className="admin-script-name"><strong>{String(k.key_prefix||"Key")} · {String(k.label||"Access key")}</strong><small>{String((k.scripts as Record<string,unknown>|undefined)?.name||k.script_id||"Script")} · {String(k.use_count||0)} uses · {k.expires_at?new Date(String(k.expires_at)).toLocaleDateString():"No expiry"}</small></div>{k.revoked_at?<span className="status">Revoked</span>:<button className="button button-ghost button-small" onClick={()=>void revokeKey(String(k.id))}>Revoke</button>}</div>)}{keyRecords.length===0&&<p className="muted">Press Refresh keys to load current records.</p>}</div></>}
+          {adminTab==="Key system"&&<><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">KEY CONTROL</span><h2>Generate keys</h2><p className="muted">Generate 1–100 keys per batch. Blank expiry or usage limit means unlimited.</p></div><button className="button button-ghost button-small" onClick={()=>void loadKeys()}>Refresh keys</button></div><form className="release-form" onSubmit={createKey}><label className="form-label">PUBLISHED SCRIPT<select required value={adminKeyScriptSlug} onChange={e=>setAdminKeyScriptSlug(e.target.value)}><option value="">Choose a published script</option>{scripts.filter(s=>s.status==="published").map(s=><option key={s.id} value={s.slug}>{s.name}</option>)}</select></label><div className="two-fields"><label className="form-label">NUMBER OF KEYS<input type="number" min={1} max={100} step={1} required value={adminKeyCount} onChange={e=>setAdminKeyCount(Number(e.target.value))}/></label><label className="form-label">EXPIRY IN DAYS<input type="number" min={1} max={3650} value={adminKeyExpiryDays} onChange={e=>setAdminKeyExpiryDays(e.target.value)} placeholder="Blank = never expires"/></label></div><div className="two-fields"><label className="form-label">MAX USES PER KEY<input type="number" min={1} max={1000000} value={adminKeyMaxUses} onChange={e=>setAdminKeyMaxUses(e.target.value)} placeholder="Blank = unlimited"/></label><label className="form-label">KEY LABEL<input value={adminKeyLabel} maxLength={80} onChange={e=>setAdminKeyLabel(e.target.value)} placeholder="Key label"/></label></div><button className="button button-light" disabled={adminKeyBusy||!isAdmin}>{adminKeyBusy?"Generating keys…":"Generate "+Math.max(1,Math.min(100,adminKeyCount||1))+" key"+(adminKeyCount===1?"":"s")}</button></form>{generatedAdminKeys.length>0&&<div className="created-key admin-created-keys"><div className="panel-heading"><strong>New keys · copy them now</strong><button type="button" className="button button-ghost button-small" onClick={()=>void navigator.clipboard.writeText(generatedAdminKeys.map(k=>k.key).join("\n")).then(()=>setNotice("All generated keys copied."),()=>setNotice("Select and copy the keys manually."))}>Copy all</button></div>{generatedAdminKeys.map((k,i)=><div className="generated-key-row" key={k.key}><div><code>{k.key}</code><small>{k.script} · {k.expires_at?"Expires "+new Date(k.expires_at).toLocaleString():"No expiry"} · {k.label}</small></div><button type="button" className="button button-ghost button-small" onClick={()=>void navigator.clipboard.writeText(k.key)}>Copy</button></div>)}</div>}{notice&&<p className="inline-notice">{notice}</p>}</div><div className="panel admin-table-panel"><div className="panel-heading"><h2>Issued keys</h2><button className="button button-ghost button-small" onClick={()=>void loadKeys()}>Refresh</button></div>{keyRecords.map((k,i)=><div className="admin-script-row" key={String(k.id||i)}><div className="admin-script-name"><strong>{String(k.key_prefix||"Key")} · {String(k.label||"Access key")}</strong><small>{String((k.scripts as Record<string,unknown>|undefined)?.name||k.script_id||"Script")} · {String(k.use_count||0)} / {k.max_uses===null||k.max_uses===undefined?"∞":String(k.max_uses)} uses · {k.expires_at?new Date(String(k.expires_at)).toLocaleDateString():"No expiry"}</small></div>{k.revoked_at?<span className="status">Revoked</span>:k.expires_at&&Date.parse(String(k.expires_at))<=Date.now()?<span className="status">Expired</span>:k.max_uses!==null&&k.max_uses!==undefined&&Number(k.use_count)>=Number(k.max_uses)?<span className="status">Used up</span>:<button className="button button-ghost button-small" onClick={()=>void revokeKey(String(k.id))}>Revoke</button>}</div>)}{keyRecords.length===0&&<p className="muted">Press Refresh keys to load current records.</p>}</div></>}
           {adminTab==="Script protector"&&<div className="panel admin-table-panel"><span className="section-kicker">PROTECTION WORKFLOW</span><h2>Protected loader</h2><p className="muted">Choose a saved script, then generate a loadstring that uses the current website origin. The Worker proxy must be active for the generated URL to resolve.</p><label className="form-label">SCRIPT<select value={protectorSlug} onChange={e=>setProtectorSlug(e.target.value)}><option value="">Choose script</option>{scripts.map(s=><option key={s.id} value={s.slug}>{s.name}</option>)}</select></label><button className="button button-light" onClick={()=>void prepareLoader()}>Generate website loader</button><textarea className="loader-output" value={loaderCode} readOnly placeholder="Generated loader…"/><button className="button button-ghost" disabled={!loaderCode} onClick={()=>void navigator.clipboard.writeText(loaderCode)}>Copy loader</button><div className="protected-card protected-card-large"><Icon name="shield"/><strong>THIS SCRIPT IS PROTECTED BY VOID DEVELOPMENT</strong><small>Client-executed source is not cryptographically hidden from its recipient.</small></div></div>}
           {adminTab==="Lua uploads"&&<div className="panel admin-table-panel"><span className="section-kicker">RELEASE WORKFLOW</span><h2>Lua uploads and script publishing</h2><p className="muted">Use the full release form in Script protector, which includes source, banner, and YouTube showcase.</p><button className="button button-light" onClick={()=>setAdminTab("Script protector")}>Open Script Protector <Icon name="arrow"/></button></div>}
           {adminTab==="Users"&&<div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">AUTH USERS</span><h2>Registered users</h2><p className="muted">Email addresses are only shown to verified admins. Results are capped at 200 users.</p></div><button className="button button-light button-small" onClick={()=>void loadAdminUsers()}>Refresh</button></div><label className="search-box"><Icon name="search"/><input value={userSearch} onChange={e=>setUserSearch(e.target.value)} placeholder="Search email…"/></label>{users.filter(u=>u.email.toLowerCase().includes(userSearch.toLowerCase())).map(u=><div className="admin-user-row" key={u.id}><div className="avatar">{(u.email||"U").slice(0,1).toUpperCase()}</div><div className="admin-script-name"><strong>{u.email||"No email"}</strong><small>Joined {new Date(u.created_at).toLocaleDateString()} · {u.last_sign_in_at?"Last sign-in "+new Date(u.last_sign_in_at).toLocaleDateString():"Never signed in"} · {u.email_confirmed_at?"Email confirmed":"Email unconfirmed"}</small></div><select value={u.roles.includes("admin")?"admin":u.roles.includes("moderator")?"moderator":"user"} onChange={e=>void updateAdminUser(u,{role:e.target.value})}><option value="user">User</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select><button className="button button-ghost button-small" onClick={()=>void updateAdminUser(u,{banned:!u.banned_until&&!u.profile?.banned})}>{u.banned_until||u.profile?.banned?"Unban":"Ban"}</button></div>)}{users.length===0&&<p className="muted">Load users to see registered accounts.</p>}</div>}
@@ -374,7 +452,7 @@ function App() {
           {adminTab==="Roadmap"&&<div className="panel admin-table-panel"><span className="section-kicker">ROADMAP</span><h2>Milestones</h2>{roadmap.map(r=><div className="roadmap-row" key={r.id}><div className="roadmap-label"><strong>{r.title}</strong><span>{r.progress}% · {r.status}</span></div><div className="progress-track"><div style={{width:r.progress+"%"}}/></div></div>)}<p className="muted">The current database has admin-only insert/update policies for roadmap items. This UI reads existing public milestones; editor controls can be added without changing existing records.</p></div>}
           {adminTab==="Audit logs"&&<div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">AUDIT TRAIL</span><h2>Administrative actions</h2></div><button className="button button-light button-small" onClick={()=>void loadAudit()}>Refresh logs</button></div>{auditRows.map((row,i)=><div className="admin-script-row" key={String(row.id||i)}><div className="admin-script-name"><strong>{String(row.action||"Action")}</strong><small>{String(row.target_type||"target")} · {String(row.target_id||"—")} · {new Date(String(row.created_at)).toLocaleString()}</small></div></div>)}{auditRows.length===0&&<p className="muted">Load audit logs to view recorded administrator actions.</p>}</div>}
         </div></section>}
-        {active==="Key system"&&<section className="key-panel panel"><div className="key-illustration"><div className="key-orbit">⌁</div><span className="section-kicker">LIVE KEY VERIFICATION</span><h2>Verify a Void key.</h2><p>Requests are checked by your deployed Supabase Edge Function and existing script-key database. Invalid keys never receive script source.</p><div className="endpoint-pill"><i/> {endpointStatus}</div></div><div className="key-form"><form onSubmit={validateKey}><label className="form-label">SCRIPT SLUG<input required value={keySlug} onChange={e=>setKeySlug(e.target.value)} placeholder="your-script-slug"/></label><label className="form-label">ACCESS KEY<input required value={keyValue} onChange={e=>setKeyValue(e.target.value)} placeholder="VOID-XX-XXX-XXXX"/></label><button className="button button-light" type="submit">Verify key <Icon name="arrow"/></button></form>{keyResult&&<p className={keyResult.startsWith("VALID")?"success-notice":"inline-notice"}>{keyResult}</p>}<div className="key-history"><h3><Icon name="lock"/> Key history</h3>{keyRecords.length?keyRecords.slice(0,8).map((k,i)=><div className="history-row" key={String(k.id||i)}><span>{String(k.key_prefix||"Key")} · {String(k.label||"Access key")}</span><small>{k.revoked_at?"Revoked":String(k.use_count||0)+" uses"}</small></div>):<div className="history-row"><span>Admin key records load in the Admin panel.</span><button className="text-button" onClick={()=>{setPage("Admin panel");setAdminTab("Key system");}}>Open admin keys</button></div>}</div></div></section>}
+        {active==="Key system"&&<section className="key-panel panel"><div className="key-illustration"><div className="key-orbit">⌁</div><span className="section-kicker">LIVE KEY VERIFICATION</span><h2>Verify a Void key.</h2><p>Requests are checked by your deployed Supabase Edge Function and existing script-key database. Invalid keys never receive script source.</p><div className="endpoint-pill"><i/> {endpointStatus}</div></div><div className="key-form"><section className="key-generation-card"><div className="panel-heading"><div><span className="section-kicker">VOID KEY GENERATOR</span><h3>Claim your key</h3><p className="muted">Wait 20 seconds while your key emerges from the Void. Visitor keys last 24 hours and the daily claim limit remains in place.</p></div></div><div className="void-key-chamber"><div className={"void-core"+(keyGenerating?" void-core-active":"")}><span>VOID</span></div>{keyGenerating&&<div className="void-countdown"><strong>{keyCountdown}</strong><span>SECONDS REMAINING</span><div className="void-progress"><i style={{width:((20-keyCountdown)/20*100)+"%"}}/></div><small>Manifesting your access key…</small></div>}</div><form className="release-form" onSubmit={startKeyGeneration}><label className="form-label">PUBLISHED SCRIPT<select required value={generationSlug} onChange={e=>setGenerationSlug(e.target.value)}><option value="">Choose a published script</option>{scripts.filter(s=>s.status==="published").map(s=><option key={s.id} value={s.slug}>{s.name}</option>)}</select></label><button className="button button-light" type="submit" disabled={keyGenerating||!scripts.some(s=>s.slug===generationSlug&&s.status==="published")}>{keyGenerating?"The Void is generating…":"Generate my key · 20 seconds"} <Icon name="arrow"/></button></form>{keyGenerationError&&<p className="inline-notice">{keyGenerationError}</p>}{generatedKey&&<div className="created-key void-key-reveal"><span className="section-kicker">KEY ACQUIRED</span><code className="key-code-box">{generatedKey}</code><div className="key-action-row"><button type="button" className="button button-light" onClick={()=>void navigator.clipboard.writeText(generatedKey).then(()=>setNotice("Key copied."),()=>setNotice("Select and copy the key manually."))}>Copy key</button><button type="button" className="button button-ghost" onClick={()=>{setKeyValue(generatedKey);setKeySlug(generationSlug);void verifyKeyValue(generatedKey,generationSlug);}}>Verify key</button></div><small>Expires {new Date(personalKeys.find(k=>k.key===generatedKey)?.expires_at||Date.now()+86400000).toLocaleString()}</small></div>}</section><section className="key-verify-card"><span className="section-kicker">LIVE KEY VERIFICATION</span><h3>Verify a key</h3><form onSubmit={validateKey}><label className="form-label">SCRIPT SLUG<input required value={keySlug} onChange={e=>setKeySlug(e.target.value)} placeholder="your-script-slug"/></label><label className="form-label">ACCESS KEY<input required value={keyValue} onChange={e=>setKeyValue(e.target.value)} placeholder="VOID-XX-XXX-XXXX"/></label><button className="button button-light" type="submit">Verify key <Icon name="arrow"/></button></form>{keyResult&&<p className={keyResult.startsWith("VALID")?"success-notice":"inline-notice"}>{keyResult}</p>}</section><div className="key-history personal-key-history"><div className="panel-heading"><h3><Icon name="lock"/> Your keys</h3><span className="eyebrow-pill">{personalKeys.length}</span></div>{personalKeys.length?personalKeys.map((k,i)=><div className="history-row personal-key-row" key={k.key}><div><code>{k.key}</code><small>{k.script} · {Date.parse(k.expires_at)<=Date.now()?"Expired":"Expires "+new Date(k.expires_at).toLocaleString()}</small></div><div className="key-action-row"><span className={Date.parse(k.expires_at)<=Date.now()?"key-status-expired":"key-status-active"}>{Date.parse(k.expires_at)<=Date.now()?"Expired":"Active"}</span><button type="button" className="button button-ghost button-small" onClick={()=>void navigator.clipboard.writeText(k.key)}>Copy</button><button type="button" className="button button-ghost button-small" onClick={()=>{setKeyValue(k.key);setKeySlug(k.script);void verifyKeyValue(k.key,k.script);}}>Verify</button></div></div>):<div className="history-row"><span>No keys claimed in this browser yet.</span></div>}</div>{isAdmin&&<div className="key-history"><div className="panel-heading"><h3>Recent admin key records</h3><button className="text-button" onClick={()=>{setPage("Admin panel");setAdminTab("Key system");void loadKeys();}}>Open admin panel</button></div>{keyRecords.slice(0,8).map((k,i)=><div className="history-row" key={String(k.id||i)}><span>{String(k.key_prefix||"Key")} · {String(k.label||"Access key")}</span><small>{k.revoked_at?"Revoked":String(k.use_count||0)+" uses"}</small></div>)}</div>}</div></section>}
 
         {active==="Key history"&&<section className="panel"><div className="panel-heading"><div><span className="section-kicker">ACCESS EVENTS</span><h2>Key history</h2></div><button className="button button-ghost button-small" onClick={()=>{setPage("Admin panel");setAdminTab("Key system");}}>Manage keys</button></div><p className="muted">For privacy, individual key values are never stored in plain text. Administrators can view key prefixes, expiry, usage, and revocation state.</p>{notice&&<p className="inline-notice">{notice}</p>}</section>}
 
