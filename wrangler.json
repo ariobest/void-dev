@@ -14,6 +14,11 @@
     "directory": "./dist/client",
     "not_found_handling": "single-page-application"
   },
+  "vars": {
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdHdteG9qd3d5ZWFzc3R1aGdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1MDcyMDAsImV4cCI6MjEwODA4MzIwMH0.MaGHrYz3BhU8KHvg5W2NAO6U7MfhidrwzOdXiGQzpw0",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_qBPb1ltQbHNZ-fO3PFmDeg_IQj0QfNB",
+    "VITE_SUPABASE_URL": "https://cqtwmxojwwyeasstuhgb.supabase.co"
+  },
   "routes": [
     {
       "pattern": "arioscripts.cyou/*",
