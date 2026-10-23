@@ -1,66 +1,138 @@
-// src/App.tsx
-
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import cloudflareLogo from "./assets/Cloudflare_Logo.svg";
-import honoLogo from "./assets/hono.svg";
+import { useMemo, useState } from "react";
 import "./App.css";
 
-function App() {
-	const [count, setCount] = useState(0);
-	const [name, setName] = useState("unknown");
+const logo = "https://cqtwmxojwwyeasstuhgb.supabase.co/storage/v1/object/public/void-files/1792744606438-void-logo-icon.png";
+const initialScripts = [
+  { id: 1, name: "Universal Loader", game: "Multiple games", status: "Live", updated: "2 hours ago", description: "Shared loader and script hub." },
+  { id: 2, name: "Murder Mystery 2", game: "Murder Mystery 2", status: "Updating", updated: "Yesterday", description: "Gameplay utilities and interface." },
+  { id: 3, name: "Blox Fruits", game: "Blox Fruits", status: "Coming soon", updated: "Oct 20, 2026", description: "Work in progress." },
+];
+const initialRoadmap = [
+  { game: "Universal loader", progress: 100, status: "Included" },
+  { game: "Murder Mystery 2", progress: 82, status: "In progress" },
+  { game: "Blox Fruits", progress: 35, status: "In progress" },
+  { game: "Grow a Garden", progress: 0, status: "Planned" },
+];
+const themes = [
+  { id: "mono", name: "Spotlight", color: "#f5f5f5" },
+  { id: "blue", name: "Royal blue", color: "#638cff" },
+  { id: "pink", name: "Neon rose", color: "#ff70bd" },
+  { id: "purple", name: "Violet", color: "#b58aff" },
+  { id: "green", name: "Emerald", color: "#62e6ad" },
+];
 
-	return (
-		<>
-			<div>
-				<a href="https://vite.dev" target="_blank">
-					<img src={viteLogo} className="logo" alt="Vite logo" />
-				</a>
-				<a href="https://react.dev" target="_blank">
-					<img src={reactLogo} className="logo react" alt="React logo" />
-				</a>
-				<a href="https://hono.dev/" target="_blank">
-					<img src={honoLogo} className="logo cloudflare" alt="Hono logo" />
-				</a>
-				<a href="https://workers.cloudflare.com/" target="_blank">
-					<img
-						src={cloudflareLogo}
-						className="logo cloudflare"
-						alt="Cloudflare logo"
-					/>
-				</a>
-			</div>
-			<h1>Vite + React + Hono + Cloudflare</h1>
-			<div className="card">
-				<button
-					onClick={() => setCount((count) => count + 1)}
-					aria-label="increment"
-				>
-					count is {count}
-				</button>
-				<p>
-					Edit <code>src/App.tsx</code> and save to test HMR
-				</p>
-			</div>
-			<div className="card">
-				<button
-					onClick={() => {
-						fetch("/api/")
-							.then((res) => res.json() as Promise<{ name: string }>)
-							.then((data) => setName(data.name));
-					}}
-					aria-label="get name"
-				>
-					Name from API is: {name}
-				</button>
-				<p>
-					Edit <code>worker/index.ts</code> to change the name
-				</p>
-			</div>
-			<p className="read-the-docs">Click on the logos to learn more</p>
-		</>
-	);
+type Script = typeof initialScripts[number];
+type Roadmap = typeof initialRoadmap[number];
+
+function Icon({ name }: { name: string }) {
+  const icons: Record<string, string> = { home: "⌂", scripts: "▤", editor: "⌘", roadmap: "◷", keys: "⌁", settings: "⚙", admin: "◈", profile: "◎", saved: "☆", bell: "♧", shield: "⬡", menu: "☰", search: "⌕", arrow: "↗", check: "✓", lock: "▣" };
+  return <span className="icon" aria-hidden="true">{icons[name] || "•"}</span>;
+}
+
+function App() {
+  const [theme, setTheme] = useState("mono");
+  const [accent, setAccent] = useState("#f5f5f5");
+  const [active, setActive] = useState("Home");
+  const [navOpen, setNavOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [search, setSearch] = useState("");
+  const [scripts, setScripts] = useState(initialScripts);
+  const [saved, setSaved] = useState<number[]>([1]);
+  const [roadmap, setRoadmap] = useState(initialRoadmap);
+  const [editorCode, setEditorCode] = useState("-- VOID SCRIPT EDITOR\n-- Paste your Lua code here.\n\nlocal Players = game:GetService(\"Players\")\nlocal LocalPlayer = Players.LocalPlayer\n\nprint(\"Welcome to VOID\")");
+  const [editorName, setEditorName] = useState("Untitled.lua");
+  const [editorNotice, setEditorNotice] = useState("");
+  const [keyValue, setKeyValue] = useState("");
+  const [keyNotice, setKeyNotice] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [spotlight, setSpotlight] = useState(true);
+  const [notifications, setNotifications] = useState(true);
+  const [layout, setLayout] = useState("Comfortable");
+  const [newGame, setNewGame] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [profileName, setProfileName] = useState("Void Member");
+
+  const filteredScripts = useMemo(() => scripts.filter(s => (s.name + " " + s.game + " " + s.description).toLowerCase().includes(search.toLowerCase())), [scripts, search]);
+  const setPage = (page: string) => { setActive(page); setNavOpen(false); };
+  const copyText = async (text: string, success: string) => {
+    try { await navigator.clipboard.writeText(text); setEditorNotice(success); }
+    catch { setEditorNotice("Select the text and copy it manually."); }
+  };
+  const toggleSaved = (id: number) => setSaved(old => old.includes(id) ? old.filter(x => x !== id) : [...old, id]);
+  const openEditor = (script?: Script) => {
+    if (script) { setEditorName(script.name.replaceAll(" ", "-") + ".lua"); setEditorCode("-- " + script.name + "\n-- Paste or write your Lua code here.\n"); }
+    setPage("Editor");
+  };
+  const navItems = [
+    ["Home", "home"], ["Scripts", "scripts"], ["Saved scripts", "saved"], ["Script editor", "editor"],
+    ["Roadmap", "roadmap"], ["Key system", "keys"], ["Notifications", "bell"], ["Settings", "settings"],
+  ];
+  const pageTitle: Record<string, string> = { Home: "Your workspace.", Scripts: "Script library.", "Saved scripts": "Your saved scripts.", Editor: "Build something.", Roadmap: "What's shipping.", "Key system": "Access center.", Notifications: "Updates & activity.", Settings: "Make it yours.", Profile: "Your profile.", Admin: "Control room." };
+
+  return (
+    <div className={`app theme-${theme} ${reducedMotion ? "reduce-motion" : ""} ${spotlight ? "spotlight-on" : ""}`} style={{ "--accent": accent } as React.CSSProperties}>
+      <div className="ambient ambient-one" /><div className="ambient ambient-two" />
+      <header className="topbar">
+        <button className="brand" onClick={() => setPage("Home")} aria-label="VOID home"><img src={logo} alt="VOID logo" /><span className="brand-word">VOID<span className="brand-dot">.</span></span></button>
+        <div className="topbar-right">
+          <span className="system-status"><i /> All systems nominal</span>
+          <button className="icon-button notification-button" onClick={() => setPage("Notifications")} aria-label="Notifications"><Icon name="bell" /><span className="notification-dot" /></button>
+          {signedIn ? <button className="profile-chip" onClick={() => setPage("Profile")}><span className="avatar">{profileName.slice(0,1).toUpperCase()}</span><span>{profileName}</span></button> : <button className="button button-light top-login" onClick={() => { setAuthMode("login"); setPage("Sign in"); }}>Sign in <Icon name="arrow" /></button>}
+          <button className={`menu-trigger ${navOpen ? "menu-active" : ""}`} onClick={() => setNavOpen(v => !v)} aria-expanded={navOpen}><Icon name="menu" /> <span>Navigate</span></button>
+        </div>
+      </header>
+
+      {navOpen && <><button className="nav-scrim" aria-label="Close navigation" onClick={() => setNavOpen(false)} /><aside className="nav-drawer"><div className="drawer-heading"><span>WORKSPACE</span><button className="icon-button" onClick={() => setNavOpen(false)}>×</button></div><div className="drawer-links">{navItems.map(([label, icon]) => <button key={label} className={active === label ? "drawer-link selected" : "drawer-link"} onClick={() => setPage(label)}><Icon name={icon} /><span>{label}</span>{label === "Notifications" && <b className="drawer-count">2</b>}</button>)}</div><div className="drawer-bottom"><div className="drawer-user"><span className="avatar">{signedIn ? profileName.slice(0,1).toUpperCase() : "V"}</span><div><strong>{signedIn ? profileName : "Guest session"}</strong><small>{signedIn ? "Member account" : "Preview workspace"}</small></div></div><button className="drawer-link" onClick={() => setPage("Profile")}><Icon name="profile" /> Profile settings</button><button className="drawer-link admin-nav" onClick={() => setPage("Admin")}><Icon name="admin" /> Admin panel <span className="admin-label">CONTROL</span></button></div></aside></>}
+
+      <main className="main-shell">
+        {active === "Home" && <section className="hero">
+          <div className="eyebrow"><span className="eyebrow-line" /> SCRIPT MANAGEMENT PLATFORM <span className="eyebrow-pill">V 2.0</span></div>
+          <h1 className="hero-title">Make your next move<br /> <span className="gradient-title">out of this world.</span></h1>
+          <p className="hero-subtitle">One clean workspace for your scripts, releases, and tools.<br className="desktop-break" /> Built for creators who like things precise.</p>
+          <div className="hero-actions"><button className="button button-light" onClick={() => setPage("Scripts")}>Explore scripts <Icon name="arrow" /></button><button className="button button-ghost" onClick={() => openEditor()}>Open editor <Icon name="editor" /></button></div>
+          <div className="hero-meta"><span><i className="live-pulse" /> COMMUNITY WORKSPACE</span><span className="meta-separator">/</span><span>DESIGNED FOR EVERY SCREEN</span></div>
+        </section>}
+
+        {active !== "Home" && <section className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> VOID WORKSPACE</div><h1>{pageTitle[active] || active}</h1><p>{active === "Admin" ? "Manage releases, roadmap progress, and workspace controls." : active === "Editor" ? "A focused place to write, review, and copy Lua snippets." : "Everything you need, without the clutter."}</p></div><button className="button button-ghost" onClick={() => setPage("Home")}>← Home</button></section>}
+
+        {(active === "Home" || active === "Scripts" || active === "Saved scripts") && <>
+          <section className="stats-grid">
+            <div className="stat-card"><div className="stat-top"><span>AVAILABLE SCRIPTS</span><span className="stat-icon"><Icon name="scripts" /></span></div><strong>{scripts.length.toString().padStart(2,"0")}</strong><small>Curated workspace library</small></div>
+            <div className="stat-card"><div className="stat-top"><span>YOUR SAVED</span><span className="stat-icon"><Icon name="saved" /></span></div><strong>{saved.length.toString().padStart(2,"0")}</strong><small>Quick access collection</small></div>
+            <div className="stat-card"><div className="stat-top"><span>ROADMAP</span><span className="stat-icon"><Icon name="roadmap" /></span></div><strong>{roadmap.filter(r=>r.progress===100).length}/{roadmap.length}</strong><small>Milestones completed</small></div>
+            <div className="stat-card"><div className="stat-top"><span>WORKSPACE</span><span className="stat-icon"><Icon name="shield" /></span></div><strong className="stat-live">READY</strong><small>Local preview mode</small></div>
+          </section>
+          <section className="section-block"><div className="section-heading"><div><span className="section-kicker">DISCOVER</span><h2>{active === "Saved scripts" ? "Saved scripts" : active === "Scripts" ? "All scripts" : "Recently updated"}</h2></div><div className="section-tools"><label className="search-box"><Icon name="search" /><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search scripts..." /></label>{active === "Home" && <button className="text-button" onClick={()=>setPage("Scripts")}>View all <Icon name="arrow" /></button>}</div></div>
+            <div className="script-grid">{filteredScripts.filter(s=>active!=="Saved scripts" || saved.includes(s.id)).map(script=><article className="script-card" key={script.id}><div className="script-card-top"><span className="script-symbol">{"</>"}</span><span className={"status status-"+script.status.toLowerCase().replaceAll(" ","-")}><i />{script.status}</span></div><h3>{script.name}</h3><p>{script.description}</p><div className="script-game"><span>GAME / CATEGORY</span><strong>{script.game}</strong></div><div className="script-card-footer"><span className="updated">↻ {script.updated}</span><div className="script-actions"><button className={saved.includes(script.id)?"icon-button is-saved":"icon-button"} onClick={()=>toggleSaved(script.id)} aria-label="Save script"><Icon name="saved" /></button><button className="button button-small" onClick={()=>openEditor(script)}>Open <Icon name="arrow" /></button></div></div></article>)}
+            {filteredScripts.filter(s=>active!=="Saved scripts" || saved.includes(s.id)).length===0 && <div className="empty-state">No scripts found. Try another search or save a script from the library.</div>}</div>
+          </section>
+          {active==="Home" && <section className="lower-grid"><div className="panel roadmap-preview"><div className="panel-heading"><div><span className="section-kicker">IN DEVELOPMENT</span><h2>Roadmap preview</h2></div><button className="icon-button" onClick={()=>setPage("Roadmap")} aria-label="View roadmap"><Icon name="arrow" /></button></div>{roadmap.slice(0,3).map(item=><div className="roadmap-row" key={item.game}><div className="roadmap-label"><strong>{item.game}</strong><span>{item.progress}%</span></div><div className="progress-track"><div style={{width:item.progress+"%"}} /></div></div>)}<button className="text-button roadmap-link" onClick={()=>setPage("Roadmap")}>Open full roadmap <Icon name="arrow" /></button></div><div className="panel quick-panel"><span className="section-kicker">QUICK ACTIONS</span><h2>Pick up where you left off.</h2><p>Open your editor or organize your personal script collection.</p><button className="quick-action" onClick={()=>openEditor()}><span className="quick-icon"><Icon name="editor" /></span><span><strong>Launch script editor</strong><small>Write or paste a Lua snippet</small></span><Icon name="arrow" /></button><button className="quick-action" onClick={()=>setPage("Settings")}><span className="quick-icon"><Icon name="settings" /></span><span><strong>Personalize workspace</strong><small>Theme, accent, and motion</small></span><Icon name="arrow" /></button></div></section>}
+        </>}
+
+        {active === "Editor" && <section className="editor-panel panel"><div className="editor-toolbar"><div className="editor-file"><span className="file-dot" /><input value={editorName} onChange={e=>setEditorName(e.target.value)} aria-label="File name" /></div><div className="editor-buttons"><span className="language-badge">LUA</span><button className="button button-ghost button-small" onClick={()=>setEditorCode("")}>Clear</button><button className="button button-light button-small" onClick={()=>void copyText(editorCode,"Code copied to clipboard.")}>Copy code ↗</button></div></div><textarea className="code-editor" spellCheck={false} value={editorCode} onChange={e=>{setEditorCode(e.target.value);setEditorNotice("");}} aria-label="Lua code editor" /><div className="editor-footer"><span><i className="live-pulse" /> Editor ready · {editorCode.split("\n").length} lines</span><span>Lua · UTF-8</span></div>{editorNotice && <p className="inline-notice">{editorNotice}</p>}<div className="editor-note"><Icon name="shield" /><p><strong>Protection note</strong><br />This editor is for writing and copying code. Real server-side key verification and script protection must be configured on a trusted backend; this preview does not claim to validate or obfuscate scripts.</p></div></section>}
+
+        {active === "Roadmap" && <section className="panel roadmap-page"><div className="panel-heading"><div><span className="section-kicker">RELEASE TRACKER</span><h2>Game support & loader progress</h2><p className="muted">Admin edits here are preview-only until connected to a database.</p></div><span className="eyebrow-pill">{roadmap.filter(r=>r.progress===100).length} COMPLETED</span></div>{roadmap.map((item,i)=><div className="roadmap-item" key={item.game}><div className="roadmap-item-top"><div><span className="roadmap-number">{String(i+1).padStart(2,"0")}</span><strong>{item.game}</strong></div><span className={"roadmap-status "+(item.progress===100?"done":"")}>{item.status}</span></div><div className="roadmap-edit"><input aria-label={"Progress for "+item.game} type="range" min="0" max="100" step="5" value={item.progress} onChange={e=>setRoadmap(old=>old.map((r,j)=>j===i?{...r,progress:Number(e.target.value),status:Number(e.target.value)===100?"Included":Number(e.target.value)===0?"Planned":"In progress"}:r))}/><strong>{item.progress}%</strong></div><div className="progress-track"><div style={{width:item.progress+"%"}} /></div></div>)}<div className="add-roadmap"><input value={newGame} onChange={e=>setNewGame(e.target.value)} placeholder="Add a game or loader milestone..." /><button className="button button-light" onClick={()=>{if(newGame.trim()){setRoadmap(old=>[...old,{game:newGame.trim(),progress:0,status:"Planned"}]);setNewGame("");}}}>Add milestone +</button></div></section>}
+
+        {active === "Key system" && <section className="panel key-panel"><div className="key-illustration"><div className="key-orbit">⌁</div><span className="section-kicker">VOID ACCESS</span><h2>One place for your access.</h2><p>Enter a key to check its format in this preview. Real validation needs a secured server endpoint and a connected key database.</p></div><form className="key-form" onSubmit={e=>{e.preventDefault();setKeyNotice(keyValue.trim()?"Preview only: no live key server is connected, so this key has not been verified.":"Enter a key first.");}}><label htmlFor="key-input">YOUR ACCESS KEY</label><input id="key-input" value={keyValue} onChange={e=>{setKeyValue(e.target.value);setKeyNotice("");}} placeholder="VOID-XXXX-XXXX-XXXX" /><button className="button button-light" type="submit">Check key <Icon name="arrow" /></button>{keyNotice&&<p className="inline-notice">{keyNotice}</p>}<div className="key-history"><h3><Icon name="lock" /> Key history</h3><div className="history-row"><span>No verified key events yet</span><small>Waiting for backend</small></div></div></form></section>}
+
+        {active === "Settings" && <section className="settings-grid"><div className="panel settings-panel"><span className="section-kicker">APPEARANCE</span><h2>Make it feel like yours.</h2><p className="muted">Pick a dark theme. Changes apply instantly to this preview.</p><div className="theme-options">{themes.map(t=><button key={t.id} className={theme===t.id?"theme-option theme-selected":"theme-option"} onClick={()=>{setTheme(t.id);setAccent(t.color);}}><span className="theme-swatch" style={{background:t.color}} /><span>{t.name}</span>{theme===t.id&&<Icon name="check" />}</button>)}</div><label className="setting-row"><span><strong>Accent color</strong><small>Choose a custom highlight color</small></span><input type="color" value={accent} onChange={e=>setAccent(e.target.value)} /></label><label className="setting-row"><span><strong>Spotlight glow</strong><small>Ambient light behind the interface</small></span><input type="checkbox" checked={spotlight} onChange={e=>setSpotlight(e.target.checked)} /></label><label className="setting-row"><span><strong>Reduced motion</strong><small>Minimize moving effects</small></span><input type="checkbox" checked={reducedMotion} onChange={e=>setReducedMotion(e.target.checked)} /></label><label className="setting-row"><span><strong>Dashboard density</strong><small>Choose your preferred spacing</small></span><select value={layout} onChange={e=>setLayout(e.target.value)}><option>Comfortable</option><option>Compact</option><option>Spacious</option></select></label></div><div className="panel settings-panel"><span className="section-kicker">PREFERENCES</span><h2>Stay in control.</h2><label className="setting-row"><span><strong>Release notifications</strong><small>Show update notices in your workspace</small></span><input type="checkbox" checked={notifications} onChange={e=>setNotifications(e.target.checked)} /></label><div className="settings-callout"><Icon name="shield" /><div><strong>Account security</strong><p>Session revocation and password changes require your authentication provider to be connected.</p></div></div><button className="button button-ghost full-button" onClick={()=>setPage("Profile")}>Profile & sessions <Icon name="arrow" /></button></div></section>}
+
+        {active === "Notifications" && <section className="panel notifications-panel"><div className="panel-heading"><div><span className="section-kicker">ACTIVITY FEED</span><h2>Latest updates</h2></div><button className="text-button" onClick={()=>setNotifications(!notifications)}>{notifications?"Mute notices":"Enable notices"}</button></div>{notifications?<><div className="notice-row"><span className="notice-icon"><Icon name="scripts" /></span><div><strong>VOID workspace refreshed</strong><p>The new dark dashboard layout is ready to explore.</p><small>Just now · Workspace</small></div><span className="notice-unread" /></div><div className="notice-row"><span className="notice-icon"><Icon name="roadmap" /></span><div><strong>Roadmap is available</strong><p>Review loader game support and adjust progress in the roadmap tab.</p><small>Today · Releases</small></div><span className="notice-unread" /></div><div className="notice-row"><span className="notice-icon"><Icon name="settings" /></span><div><strong>Personalization options</strong><p>Choose a theme, accent color, and motion preferences.</p><small>Today · Settings</small></div></div></>:<div className="empty-state">Notifications are muted in this preview.</div>}</section>}
+
+        {active === "Profile" && <section className="panel profile-panel"><div className="profile-large"><span className="avatar avatar-large">{profileName.slice(0,1).toUpperCase()}</span><div><span className="section-kicker">YOUR ACCOUNT</span><h2>{profileName}</h2><p className="muted">{signedIn?email:"Guest preview · No account provider connected"}</p></div></div><label className="form-label">DISPLAY NAME<input value={profileName} onChange={e=>setProfileName(e.target.value)} /></label><label className="form-label">EMAIL ADDRESS<input value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" /></label><div className="session-card"><Icon name="shield" /><div><strong>Current browser session</strong><p>{signedIn?"Signed-in state is local preview only.":"Guest preview session. No server session exists."}</p></div><span className="status status-live"><i /> Current</span></div><div className="profile-actions"><button className="button button-light" onClick={()=>setEditorNotice("Profile changes are only stored in this page preview.")}>Save profile</button>{signedIn&&<button className="button button-ghost" onClick={()=>{setSignedIn(false);setPage("Home");}}>Sign out</button>}</div></section>}
+
+        {(active === "Sign in" || active === "Sign up") && <section className="auth-wrap"><div className="auth-aside"><img src={logo} alt="VOID" /><span className="section-kicker">WELCOME TO VOID</span><h2>Your workspace.<br/>Your next move.</h2><p>A quieter space to manage releases, keep your scripts organized, and make the tools yours.</p><div className="auth-trust"><Icon name="shield" /> Thoughtful design. Creator-first workflow.</div></div><form className="panel auth-card" onSubmit={e=>{e.preventDefault();if(email.trim()&&password.length>=6){setSignedIn(true);setProfileName(email.split("@")[0]||"Void Member");setPage("Home");}else{setEditorNotice("Enter an email and a password with at least 6 characters.");}}}><span className="section-kicker">{authMode==="login"?"GOOD TO HAVE YOU BACK":"START YOUR WORKSPACE"}</span><h2>{authMode==="login"?"Sign in":"Create your account"}</h2><p className="muted">{authMode==="login"?"Enter your details to continue.":"A fresh start for your script workflow."}</p><label className="form-label">EMAIL ADDRESS<input type="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" /></label><label className="form-label">PASSWORD<div className="password-input"><input type={showPassword?"text":"password"} value={password} required minLength={6} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters" /><button type="button" onClick={()=>setShowPassword(v=>!v)}>{showPassword?"Hide":"Show"}</button></div></label><button className="button button-light auth-submit" type="submit">{authMode==="login"?"Continue":"Create account"} <Icon name="arrow" /></button>{editorNotice&&<p className="inline-notice">{editorNotice}</p>}<p className="auth-switch">{authMode==="login"?"New to VOID?":"Already have an account?"} <button type="button" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setEditorNotice("");}}>{authMode==="login"?"Create an account":"Sign in"}</button></p><p className="auth-disclaimer">Interface preview only. Connect your existing authentication provider before using real accounts.</p></form></section>}
+
+        {active === "Admin" && <section className="admin-layout"><aside className="admin-sidebar panel"><div className="admin-brand"><span className="admin-mark"><Icon name="admin" /></span><div><strong>VOID CONTROL</strong><small>ADMINISTRATION</small></div></div><span className="section-kicker">MANAGEMENT</span><button className="admin-side-active"><Icon name="home" /> Overview</button><button onClick={()=>setPage("Scripts")}><Icon name="scripts" /> Script library</button><button onClick={()=>setPage("Roadmap")}><Icon name="roadmap" /> Script roadmap</button><button onClick={()=>setPage("Key system")}><Icon name="keys" /> Key system</button><button onClick={()=>setPage("Settings")}><Icon name="settings" /> Appearance</button><div className="admin-warning"><Icon name="shield" /><p>Preview controls only. Protect admin actions with server-side role checks.</p></div></aside><div className="admin-content"><div className="admin-overview-grid"><div className="stat-card"><span className="section-kicker">TOTAL SCRIPTS</span><strong>{scripts.length}</strong><small>Library entries</small></div><div className="stat-card"><span className="section-kicker">SAVED ITEMS</span><strong>{saved.length}</strong><small>In this browser view</small></div><div className="stat-card"><span className="section-kicker">ROADMAP ITEMS</span><strong>{roadmap.length}</strong><small>Milestones</small></div></div><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">CONTENT CONTROL</span><h2>Script management</h2></div><button className="button button-light button-small" onClick={()=>{const id=Math.max(0,...scripts.map(s=>s.id))+1;setScripts(old=>[...old,{id,name:"New script "+id,game:"Unassigned",status:"Coming soon",updated:"Just now",description:"New draft. Update details in your release workflow."}]);}}>Add script +</button></div>{scripts.map(script=><div className="admin-script-row" key={script.id}><span className="script-symbol">{"</>"}</span><div className="admin-script-name"><strong>{script.name}</strong><small>{script.game}</small></div><select value={script.status} onChange={e=>setScripts(old=>old.map(s=>s.id===script.id?{...s,status:e.target.value}:s))}><option>Live</option><option>Updating</option><option>Coming soon</option></select><button className="icon-button" aria-label="Edit script in editor" onClick={()=>openEditor(script)}><Icon name="editor" /></button></div>)}</div><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">DELIVERY TRACKER</span><h2>Roadmap progress</h2></div><button className="text-button" onClick={()=>setPage("Roadmap")}>Edit roadmap <Icon name="arrow" /></button></div>{roadmap.map(item=><div className="roadmap-row" key={item.game}><div className="roadmap-label"><strong>{item.game}</strong><span>{item.progress}% · {item.status}</span></div><div className="progress-track"><div style={{width:item.progress+"%"}} /></div></div>)}</div><div className="panel admin-table-panel"><span className="section-kicker">SECURITY CHECKLIST</span><h2>Backend integrations</h2><div className="security-list"><p><span className="security-dot pending" /> Authentication provider <b>Needs connection</b></p><p><span className="security-dot pending" /> Key validation endpoint <b>Needs connection</b></p><p><span className="security-dot pending" /> Protected admin roles <b>Needs connection</b></p><p><span className="security-dot pending" /> Persistent roadmap storage <b>Needs connection</b></p></div></div></div></section>}
+
+        <footer className="footer"><div className="footer-brand"><img src={logo} alt="" /><span>VOID<span className="brand-dot">.</span></span></div><span>BUILT FOR THE NEXT MOVE.</span><button onClick={()=>setPage("Settings")}>Workspace settings ↗</button></footer>
+      </main>
+    </div>
+  );
 }
 
 export default App;
