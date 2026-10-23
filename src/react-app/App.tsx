@@ -362,9 +362,18 @@ function App() {
     const protectedSlug=slugify(releaseSlug||releaseName);
     const record={name:releaseName.trim().slice(0,120),slug:protectedSlug,category:releaseCategory.trim().slice(0,80)||"Utility",description:releaseDescription.trim().slice(0,2000)||"Protected script (unpublished)",content:releaseSource,status:"draft",banner_url:releaseBanner.trim()||null,showcase_url:releaseVideo.trim()||null,release_status:"working_on",owner_id:user.id,updated_at:new Date().toISOString()};
     try {
-      const query=editingScriptId?supabase.from("scripts").update(record).eq("id",editingScriptId):supabase.from("scripts").insert(record);
-      const {error}=await query;
-      if(error)throw error;
+      if(editingScriptId) {
+        const {error}=await supabase.from("scripts").update(record).eq("id",editingScriptId);
+        if(error)throw error;
+      } else {
+        const {data:existingDraft,error:lookupError}=await supabase.from("scripts").select("id").eq("slug",protectedSlug).eq("owner_id",user.id).eq("status","draft").maybeSingle();
+        if(lookupError)throw lookupError;
+        const saveQuery=existingDraft
+          ? supabase.from("scripts").update(record).eq("id",existingDraft.id)
+          : supabase.from("scripts").insert(record);
+        const {error}=await saveQuery;
+        if(error)throw error;
+      }
       const url=window.location.origin+"/api/scripts/load?script="+encodeURIComponent(protectedSlug);
       setLoaderCode("-- Protected by Void Development\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()");
       setProtectorSlug(protectedSlug);
@@ -374,7 +383,7 @@ function App() {
     } catch(error) {
       const dbError = error && typeof error === "object" ? error as { code?: unknown; message?: unknown } : null;
       if (dbError?.code === "23505" || (typeof dbError?.message === "string" && /duplicate key|unique constraint/i.test(dbError.message))) {
-        setReleaseNotice("That script slug already exists. Change the slug, or open the existing script from Releases to update it.");
+        setReleaseNotice("That slug is already used by another script. Choose a different slug.");
       } else {
         setReleaseNotice("Protection failed: "+messageOf(error));
       }
