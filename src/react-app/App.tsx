@@ -101,7 +101,6 @@ function App() {
   const [keySlug,setKeySlug] = useState("");
   const [keyResult,setKeyResult] = useState("");
   const [keyRecords,setKeyRecords] = useState<Array<Record<string,unknown>>>([]);
-  const [generationSlug,setGenerationSlug] = useState("");
   const [keyCountdown,setKeyCountdown] = useState(0);
   const [keyGenerating,setKeyGenerating] = useState(false);
   const [generatedKey,setGeneratedKey] = useState("");
@@ -113,7 +112,6 @@ function App() {
   const [adminKeyExpiryDays,setAdminKeyExpiryDays] = useState("30");
   const [adminKeyMaxUses,setAdminKeyMaxUses] = useState("");
   const [adminKeyLabel,setAdminKeyLabel] = useState("Void Development key");
-  const [adminKeyScriptSlug,setAdminKeyScriptSlug] = useState("");
   const [generatedAdminKeys,setGeneratedAdminKeys] = useState<Array<{key:string;expires_at:string|null;script:string;label:string}>>([]);
   const [adminKeyBusy,setAdminKeyBusy] = useState(false);
   const [releaseName,setReleaseName] = useState("");
