@@ -17,8 +17,9 @@ const browserProtectionPage = `<!doctype html>
 html,body{margin:0;min-height:100%;background:#050505;color:#f7f7f7}
 body{min-height:100vh;display:grid;place-items:center;overflow:hidden;padding:22px;background:radial-gradient(ellipse 48% 42% at 50% 40%,rgba(255,255,255,.13),transparent 75%),#050505}
 .card{width:min(620px,100%);padding:clamp(36px,7vw,72px) 24px;text-align:center;border:1px solid rgba(255,255,255,.15);border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.012));box-shadow:0 30px 100px #000b,0 0 65px #ffffff0c,inset 0 1px #ffffff12;backdrop-filter:blur(18px);animation:rise .35s ease-out both}
-.mark{width:74px;height:74px;margin:0 auto 28px;display:grid;place-items:center;border:1px solid #ffffff55;border-radius:22px;background:#ffffff08;box-shadow:0 0 35px #ffffff12}
-svg{width:42px;height:42px;filter:drop-shadow(0 0 8px #ffffff55)}
+.mark{width:100px;height:100px;margin:0 auto 30px;display:grid;place-items:center;background:transparent;animation:logo-glow 4s ease-in-out infinite}
+.mark img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 18px #ffffff26)}
+@keyframes logo-glow{0%,100%{filter:drop-shadow(0 0 0 #ffffff00)}50%{filter:drop-shadow(0 0 18px #ffffff20)}}
 h1{margin:0;font-size:clamp(27px,5vw,46px);line-height:1.12;letter-spacing:-.05em;font-weight:850;text-wrap:balance}
 h1 span{display:block;margin-top:9px;color:#fff}
 @keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
@@ -27,7 +28,7 @@ h1 span{display:block;margin-top:9px;color:#fff}
 </head>
 <body>
 <main class="card">
-<div class="mark" role="img" aria-label="Void Development shield"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 5 53 13v16c0 14-8.7 24.1-21 30C19.7 53.1 11 43 11 29V13L32 5Z" stroke="white" stroke-width="2.8" stroke-linejoin="round"/><path d="m22 32 7 7 14-15" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<div class="mark"><img src="https://cqtwmxojwwyeasstuhgb.supabase.co/storage/v1/object/public/void-files/1792744606438-void-logo-icon.png" alt="Void Development logo"></div>
 <h1>THIS SCRIPT IS PROTECTED <span>BY VOID DEVELOPMENT</span></h1>
 </main>
 </body>
