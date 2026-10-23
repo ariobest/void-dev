@@ -68,7 +68,14 @@ function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80);
 }
 function messageOf(error: unknown) {
-  return error instanceof Error ? error.message : "Something went wrong. Please try again.";
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object") {
+    const detail = error as { message?: unknown; details?: unknown; code?: unknown };
+    if (typeof detail.message === "string" && detail.message.trim()) return detail.message;
+    if (typeof detail.details === "string" && detail.details.trim()) return detail.details;
+    if (typeof detail.code === "string" && detail.code === "23505") return "That script slug is already in use. Choose a different slug or edit the existing protected script.";
+  }
+  return "Something went wrong. Please try again.";
 }
 
 function App() {
@@ -364,7 +371,14 @@ function App() {
       setReleaseNotice("Script protected and saved as unpublished. No release or key required.");
       setEditingScriptId(""); setReleaseName(""); setReleaseSlug(""); setReleaseDescription(""); setReleaseBanner(""); setReleaseVideo(""); setReleaseSource("");
       await refreshScripts(); setAdminTab("Script protector"); setActive("Admin panel");
-    } catch(error) { setReleaseNotice("Protection failed: "+messageOf(error)); }
+    } catch(error) {
+      const dbError = error && typeof error === "object" ? error as { code?: unknown; message?: unknown } : null;
+      if (dbError?.code === "23505" || (typeof dbError?.message === "string" && /duplicate key|unique constraint/i.test(dbError.message))) {
+        setReleaseNotice("That script slug already exists. Change the slug, or open the existing script from Releases to update it.");
+      } else {
+        setReleaseNotice("Protection failed: "+messageOf(error));
+      }
+    }
   }
 
   function editRelease(script:ScriptRecord) {
