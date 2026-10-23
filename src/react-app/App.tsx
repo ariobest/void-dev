@@ -262,7 +262,7 @@ function App() {
         setAuthMessage("Account created successfully.");
       } else {
         // Verify the password in a non-persistent client so no app session is opened before the code step.
-        const verifier=createClient(scriptApiUrl.replace(/\\/functions\\/v1\\/script-api$/, ""),supabasePublicKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+        const verifier=createClient(scriptApiUrl.split("/functions/v1/script-api")[0],supabasePublicKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
         const {error}=await verifier.auth.signInWithPassword({email:email.trim(),password});
         if(error)throw error;
         await verifier.auth.signOut({scope:"local"});
