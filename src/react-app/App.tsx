@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ChangeEvent, type FormEvent } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import { createClient, type Session, type User } from "@supabase/supabase-js";
 import { scriptApiUrl, supabase, supabasePublicKey } from "./lib/supabase";
 import "./App.css";
 
@@ -95,6 +95,10 @@ function App() {
   const [displayName,setDisplayName] = useState("");
   const [authBusy,setAuthBusy] = useState(false);
   const [authMessage,setAuthMessage] = useState("");
+  const [otpPending,setOtpPending] = useState(false);
+  const [otpCode,setOtpCode] = useState("");
+  const [otpCooldown,setOtpCooldown] = useState(0);
+  const [otpResending,setOtpResending] = useState(false);
   const [showPassword,setShowPassword] = useState(false);
   const [search,setSearch] = useState("");
   const [scripts,setScripts] = useState<ScriptRecord[]>([]);
@@ -223,6 +227,11 @@ function App() {
   },[refreshProfile]);
 
   useEffect(() => { void refreshScripts(); },[refreshScripts]);
+  useEffect(() => {
+    if(otpCooldown<=0)return;
+    const timer=window.setInterval(()=>setOtpCooldown(value=>Math.max(0,value-1)),1000);
+    return ()=>window.clearInterval(timer);
+  },[otpCooldown>0]);
   useEffect(() => { void refreshRoadmap(); },[refreshRoadmap]);
   useEffect(() => { if (active==="Home"||active==="Scripts"||active==="Releases") void trackEvent(active==="Scripts"?"script_view":active==="Releases"?"release_view":"page_view","/"+slugify(active)); },[active,trackEvent]);
   useEffect(() => {
@@ -241,19 +250,43 @@ function App() {
   async function handleAuth(e:FormEvent<HTMLFormElement>) {
     e.preventDefault(); setAuthBusy(true); setAuthMessage("");
     try {
-      if (authMode==="signup") {
+      if(authMode==="login"&&otpPending) {
+        if(!/^\\d{6}$/.test(otpCode)){setAuthMessage("Enter the complete 6-digit code from your email.");return;}
+        const {error}=await supabase.auth.verifyOtp({email:email.trim(),token:otpCode,type:"email"});
+        if(error)throw error;
+        setOtpPending(false);setOtpCode("");setOtpCooldown(0);
+      } else if (authMode==="signup") {
         const {data,error} = await supabase.auth.signUp({email:email.trim(),password,options:{data:{display_name:displayName.trim()||email.split("@")[0]}}});
         if (error) throw error;
         if (!data.session) { setAuthMessage("Account created. Check your email to confirm the address, then sign in."); return; }
         setAuthMessage("Account created successfully.");
       } else {
-        const {error} = await supabase.auth.signInWithPassword({email:email.trim(),password});
-        if (error) throw error;
+        // Verify the password in a non-persistent client so no app session is opened before the code step.
+        const verifier=createClient(scriptApiUrl.replace(/\\/functions\\/v1\\/script-api$/, ""),supabasePublicKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+        const {error}=await verifier.auth.signInWithPassword({email:email.trim(),password});
+        if(error)throw error;
+        await verifier.auth.signOut({scope:"local"});
+        const {error:otpError}=await supabase.auth.signInWithOtp({email:email.trim(),options:{shouldCreateUser:false}});
+        if(otpError)throw otpError;
+        setOtpPending(true);setOtpCode("");setOtpCooldown(60);
+        setAuthMessage("A 6-digit sign-in code has been sent to your email. Check your inbox and spam folder.");
+        return;
       }
       setPage(isDedicatedProtector ? "Admin panel" : "Home");
       if (isDedicatedProtector) setAdminTab("Script protector");
     } catch (error) { setAuthMessage(messageOf(error)); }
     finally { setAuthBusy(false); }
+  }
+
+  async function resendLoginCode() {
+    if(otpCooldown>0||otpResending)return;
+    setOtpResending(true);setAuthMessage("");
+    try {
+      const {error}=await supabase.auth.signInWithOtp({email:email.trim(),options:{shouldCreateUser:false}});
+      if(error)throw error;
+      setOtpCooldown(60);setAuthMessage("A new 6-digit code has been requested. Check your inbox.");
+    } catch(error) {setAuthMessage(messageOf(error));}
+    finally {setOtpResending(false);}
   }
 
   async function signInGoogle() {
@@ -549,7 +582,7 @@ function App() {
 
         {active==="Help center"&&<section className="panel"><span className="section-kicker">HELP CENTER</span><h2>Quick help</h2>{[["How do I release a script?","Sign in with an account that has the admin role, open Admin panel → Lua uploads, add the source and metadata, then publish."],["How does protection work?","Public cards do not expose the source field. A generated loader calls this site's /api/scripts/load proxy, which forwards the key to your Supabase script API."],["Why can't I see admin tools?","Admin controls require an authenticated user with the admin role in public.user_roles. A profile label alone does not grant access."],["Why does analytics need consent?","Site analytics events are recorded only after you opt into analytics cookies. Essential authentication remains separate."]].map(([q,a])=><details className="help-item" key={q}><summary>{q}</summary><p>{a}</p></details>)}</section>}
 
-        {isAuthPage&&<section className="auth-wrap"><div className="auth-aside"><img src={logo} alt="Void Development"/><span className="section-kicker">WELCOME TO VOID DEVELOPMENT</span><h2>Your workspace.<br/><span className="gradient-title">Your next move.</span></h2><p>Sign in to save your profile, manage your releases, and access the tools allowed for your account.</p><div className="auth-trust"><Icon name="shield"/> Real Supabase authentication · protected roles</div></div><form className="panel auth-card" onSubmit={handleAuth}><span className="section-kicker">{authMode==="login"?"WELCOME BACK":"CREATE YOUR ACCOUNT"}</span><h2>{authMode==="login"?"Sign in":"Create account"}</h2><p className="muted">{authMode==="login"?"Continue to your Void Development workspace.":"Create your own account to save preferences and scripts."}</p>{authMode==="signup"&&<label className="form-label">DISPLAY NAME<input value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name"/></label>}<label className="form-label">EMAIL ADDRESS<input type="email" autoComplete="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label><label className="form-label">PASSWORD<div className="password-input"><input type={showPassword?"text":"password"} autoComplete={authMode==="login"?"current-password":"new-password"} minLength={8} value={password} required onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters"/><button type="button" onClick={()=>setShowPassword(v=>!v)}>{showPassword?"Hide":"Show"}</button></div></label><button className="button button-light auth-submit" type="submit" disabled={authBusy}>{authBusy?"Please wait…":authMode==="login"?"Sign in securely":"Create account"} <Icon name="arrow"/></button><button className="button button-ghost auth-submit" type="button" disabled={authBusy} onClick={()=>void signInGoogle()}>Continue with Google</button>{authMessage&&<p className="inline-notice">{authMessage}</p>}<p className="auth-switch">{authMode==="login"?"New to Void Development?":"Already have an account?"} <button type="button" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setAuthMessage("");}}>{authMode==="login"?"Create an account":"Sign in"}</button></p><p className="auth-disclaimer">Your credentials are handled by Supabase Auth. Do not share your password with anyone.</p></form></section>}
+        {isAuthPage&&<section className="auth-wrap"><div className="auth-aside"><img src={logo} alt="Void Development"/><span className="section-kicker">WELCOME TO VOID DEVELOPMENT</span><h2>Your workspace.<br/><span className="gradient-title">Your next move.</span></h2><p>Sign in to save your profile, manage your releases, and access the tools allowed for your account.</p><div className="auth-trust"><Icon name="shield"/> Real Supabase authentication · protected roles</div></div><form className={"panel auth-card"+(otpPending?" auth-card-otp":"")} onSubmit={handleAuth}><span className="section-kicker">{otpPending?"SECOND STEP · EMAIL VERIFICATION":authMode==="login"?"WELCOME BACK":"CREATE YOUR ACCOUNT"}</span><div className="auth-emblem"><Icon name={otpPending?"lock":"shield"}/></div><h2>{otpPending?"Check your inbox":authMode==="login"?"Sign in":"Create account"}</h2><p className="muted">{otpPending?"Enter the 6-digit security code sent to "+email.trim()+".":authMode==="login"?"Continue to your Void Development workspace.":"Create your own account to save preferences and scripts."}</p>{otpPending?<><div className="otp-security-note"><span className="otp-mail-icon">✉</span><span><strong>Verification code sent</strong><small>Check your inbox and spam folder.</small></span><span className="otp-live-dot"/></div><label className="form-label otp-label">6-DIGIT CODE<input className="otp-code-input" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={otpCode} required onChange={e=>setOtpCode(e.target.value.replace(/\\D/g,"").slice(0,6))} placeholder="000000" aria-label="6-digit email verification code"/></label><button className="button button-light auth-submit" type="submit" disabled={authBusy||otpCode.length!==6}>{authBusy?"Verifying code…":"Verify & sign in"} <Icon name="arrow"/></button><div className="otp-resend-row"><span>{otpCooldown>0?("Resend available in 00:"+String(otpCooldown).padStart(2,"0")):"Didn't get the email?"}</span><button type="button" className="otp-resend-button" disabled={authBusy||otpResending||otpCooldown>0} onClick={()=>void resendLoginCode()}>{otpResending?"Sending…":otpCooldown>0?"Resend code":"Resend code ↗"}</button></div><button type="button" className="otp-back-button" onClick={()=>{setOtpPending(false);setOtpCode("");setOtpCooldown(0);setPassword("");setAuthMessage("");}}>← Back to password</button></>:<>{authMode==="signup"&&<label className="form-label">DISPLAY NAME<input value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name"/></label>}<label className="form-label">EMAIL ADDRESS<input type="email" autoComplete="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label><label className="form-label">PASSWORD<div className="password-input"><input type={showPassword?"text":"password"} autoComplete={authMode==="login"?"current-password":"new-password"} minLength={8} value={password} required onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters"/><button type="button" onClick={()=>setShowPassword(v=>!v)}>{showPassword?"Hide":"Show"}</button></div></label><button className="button button-light auth-submit" type="submit" disabled={authBusy}>{authBusy?"Please wait…":authMode==="login"?"Continue securely":"Create account"} <Icon name="arrow"/></button><button className="button button-ghost auth-submit" type="button" disabled={authBusy} onClick={()=>void signInGoogle()}>Continue with Google</button></>}{authMessage&&<p className="inline-notice">{authMessage}</p>}{!otpPending&&<p className="auth-switch">{authMode==="login"?"New to Void Development?":"Already have an account?"} <button type="button" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setAuthMessage("");setOtpPending(false);}}>{authMode==="login"?"Create an account":"Sign in"}</button></p>}<p className="auth-disclaimer">Your credentials are handled by Supabase Auth. Never share your password or verification code.</p></form></section>}
 
           {notice&&<div className="panel inline-notice">{notice}</div>}
 
