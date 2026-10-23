@@ -41,12 +41,7 @@ footer{margin-top:28px;color:#57575e;font-size:10px;letter-spacing:.12em;text-tr
   <div class="mark" role="img" aria-label="Void Development security shield">
     <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 5 53 13v16c0 14-8.7 24.1-21 30C19.7 53.1 11 43 11 29V13L32 5Z" stroke="white" stroke-width="2.8" stroke-linejoin="round"/><path d="m22 32 7 7 14-15" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="30" r="24" stroke="white" stroke-opacity=".16"/></svg>
   </div>
-  <div class="eyebrow"><span class="dot"></span> Void security protocol</div>
   <h1>THIS SCRIPT IS PROTECTED <span>BY VOID DEVELOPMENT</span></h1>
-  <div class="rule"></div>
-  <p class="sub"><strong>OUR ADVANCED PROTECTOR</strong> blocks source display in a web browser. The protected loader is intended to be requested by its supported script client.</p>
-  <div class="status"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 20 6v6c0 5-3.2 8-8 10-4.8-2-8-5-8-10V6l8-3Z" stroke="currentColor" stroke-width="1.6"/><path d="m8 12 2.5 2.5L16 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Browser source view restricted</div>
-  <footer>VOID DEVELOPMENT · SCRIPT PROTECTION</footer>
 </main>
 </body>
 </html>`;
