@@ -67,6 +67,15 @@ app.get("/__void_protected_7f3d9a2c", () => new Response(browserProtectionPage, 
   },
 }));
 
+// Short, loadstring-friendly endpoint: /load/<script-slug>?key=VOID-XX-XXX-XXXX
+// Keep the existing API URL working for older releases.
+app.get("/load/:slug", (c) => {
+  const target = new URL(c.req.url);
+  target.pathname = "/api/scripts/load";
+  target.searchParams.set("script", c.req.param("slug"));
+  return app.fetch(new Request(target.toString(), { method: "GET", headers: c.req.raw.headers }), c.env);
+});
+
 app.get("/api/scripts/load", async (c) => {
   const slug = (c.req.query("script") || "").trim();
   const key = (c.req.query("key") || "").trim();
