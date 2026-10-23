@@ -1,135 +1,415 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ChangeEvent, type FormEvent } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { scriptApiUrl, supabase, supabasePublicKey } from "./lib/supabase";
 import "./App.css";
 
 const logo = "https://cqtwmxojwwyeasstuhgb.supabase.co/storage/v1/object/public/void-files/1792744606438-void-logo-icon.png";
-const initialScripts = [
-  { id: 1, name: "Universal Loader", game: "Multiple games", status: "Live", updated: "2 hours ago", description: "Shared loader and script hub." },
-  { id: 2, name: "Murder Mystery 2", game: "Murder Mystery 2", status: "Updating", updated: "Yesterday", description: "Gameplay utilities and interface." },
-  { id: 3, name: "Blox Fruits", game: "Blox Fruits", status: "Coming soon", updated: "Oct 20, 2026", description: "Work in progress." },
-];
-const initialRoadmap = [
-  { game: "Universal loader", progress: 100, status: "Included" },
-  { game: "Murder Mystery 2", progress: 82, status: "In progress" },
-  { game: "Blox Fruits", progress: 35, status: "In progress" },
-  { game: "Grow a Garden", progress: 0, status: "Planned" },
-];
 const themes = [
-  { id: "mono", name: "Spotlight", color: "#f5f5f5" },
-  { id: "blue", name: "Royal blue", color: "#638cff" },
-  { id: "pink", name: "Neon rose", color: "#ff70bd" },
-  { id: "purple", name: "Violet", color: "#b58aff" },
-  { id: "green", name: "Emerald", color: "#62e6ad" },
-];
+  ["spotlight","Spotlight","#f5f5f5"],["royal-blue","Royal Blue","#638cff"],["neon-rose","Neon Rose","#ff70bd"],["violet","Violet","#b58aff"],["emerald","Emerald","#62e6ad"],
+  ["ice-blue","Ice Blue","#75d7ff"],["arctic","Arctic Cyan","#39f0e8"],["midnight","Midnight Blue","#4f78d8"],["ocean","Deep Ocean","#228bd6"],["sapphire","Sapphire","#4263eb"],
+  ["amethyst","Amethyst","#a78bfa"],["ultraviolet","Ultraviolet","#8b5cf6"],["orchid","Orchid","#d78cff"],["magenta","Electric Magenta","#e879f9"],["hot-pink","Hot Pink","#ff4da6"],
+  ["crimson","Crimson","#ff5a68"],["ruby","Ruby Red","#e83e5a"],["ember","Ember Orange","#ff8a4c"],["sunset","Sunset","#f59e68"],["amber","Amber Glow","#f5c451"],
+  ["lemon","Lemon Neon","#d9f66f"],["lime","Lime Green","#a3e635"],["matrix","Matrix Green","#43e68d"],["forest","Forest Green","#4fb477"],["mint","Mint Frost","#86efc5"],
+  ["silver","Silver Chrome","#c7ccd6"],["graphite","Graphite","#9ca3af"],["slate","Slate Gray","#94a3b8"],["lavender","Soft Lavender","#c4b5fd"],["cotton-candy","Cotton Candy","#f9a8d4"],
+  ["coral","Coral Reef","#fb7185"],["peach","Peach Mist","#fdba9a"],["plasma","Plasma","#a3a3ff"],["laser","Laser Blue","#4cc9f0"],["mono","Monochrome","#e5e7eb"]
+] as const;
 
-type Script = typeof initialScripts[number];
-type Roadmap = typeof initialRoadmap[number];
+type ScriptRecord = {
+  id: string; name: string; slug: string; category?: string; description?: string; content?: string | null;
+  status?: string; release_status?: string; banner_url?: string | null; showcase_url?: string | null;
+  view_count?: number; created_at?: string; updated_at?: string; is_featured?: boolean; link?: string | null;
+};
+type Profile = { username: string; display_name: string; bio: string; avatar_url: string; role: string; banned: boolean };
+type CookiePrefs = { necessary: true; analytics: boolean; personalization: boolean; decidedAt: string };
+type Analytics = { periodDays: number; events: number; uniqueVisitors: number; todayViews: number; todayVisitors: number; byEvent: Record<string, number>; limited?: boolean };
+type AdminUser = { id: string; email: string; created_at: string; last_sign_in_at: string | null; email_confirmed_at: string | null; banned_until: string | null; profile: Partial<Profile> | null; roles: string[] };
+
+const emptyProfile: Profile = { username: "", display_name: "", bio: "", avatar_url: "", role: "user", banned: false };
+const navItems = [
+  ["Home","home"],["Scripts","scripts"],["Saved scripts","saved"],["Releases","release"],["Script editor","editor"],
+  ["Themes","palette"],["Script protector","shield"],["Lua uploads","upload"],["Key system","keys"],["Key history","history"],
+  ["Roadmap","roadmap"],["Notifications","bell"],["Analytics","chart"],["API & endpoints","api"],["Activity log","activity"],
+  ["Community","users"],["Changelog","clock"],["Help center","help"],["Profile","profile"],["Sessions","lock"],["Settings","settings"],["Admin panel","admin"]
+] as const;
 
 function Icon({ name }: { name: string }) {
-  const icons: Record<string, string> = { home: "⌂", scripts: "▤", editor: "⌘", roadmap: "◷", keys: "⌁", settings: "⚙", admin: "◈", profile: "◎", saved: "☆", bell: "♧", shield: "⬡", menu: "☰", search: "⌕", arrow: "↗", check: "✓", lock: "▣" };
+  const icons: Record<string,string> = {home:"⌂",scripts:"▤",editor:"⌘",roadmap:"◷",keys:"⌁",settings:"⚙",admin:"◈",profile:"◎",saved:"☆",bell:"♧",shield:"⬡",menu:"☰",search:"⌕",arrow:"↗",check:"✓",lock:"▣",palette:"◉",upload:"↑",release:"✦",history:"↺",chart:"▥",api:"⌘",activity:"⌁",users:"♙",clock:"◷",help:"?",close:"×"};
   return <span className="icon" aria-hidden="true">{icons[name] || "•"}</span>;
 }
 
-function App() {
-  const [theme, setTheme] = useState("mono");
-  const [accent, setAccent] = useState("#f5f5f5");
-  const [active, setActive] = useState("Home");
-  const [navOpen, setNavOpen] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [search, setSearch] = useState("");
-  const [scripts, setScripts] = useState(initialScripts);
-  const [saved, setSaved] = useState<number[]>([1]);
-  const [roadmap, setRoadmap] = useState<Roadmap[]>(initialRoadmap);
-  const [editorCode, setEditorCode] = useState("-- VOID SCRIPT EDITOR\n-- Paste your Lua code here.\n\nlocal Players = game:GetService(\"Players\")\nlocal LocalPlayer = Players.LocalPlayer\n\nprint(\"Welcome to VOID\")");
-  const [editorName, setEditorName] = useState("Untitled.lua");
-  const [editorNotice, setEditorNotice] = useState("");
-  const [keyValue, setKeyValue] = useState("");
-  const [keyNotice, setKeyNotice] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [spotlight, setSpotlight] = useState(true);
-  const [notifications, setNotifications] = useState(true);
-  const [layout, setLayout] = useState("Comfortable");
-  const [newGame, setNewGame] = useState("");
-  const [profileName, setProfileName] = useState("Void Member");
+function readCookie(name: string) {
+  if (typeof document === "undefined") return "";
+  const entry = document.cookie.split("; ").find((part) => part.startsWith(name + "="));
+  return entry ? decodeURIComponent(entry.slice(name.length + 1)) : "";
+}
+function writeCookie(name: string, value: string, days = 365) {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = name + "=" + encodeURIComponent(value) + "; Max-Age=" + String(days * 86400) + "; Path=/; SameSite=Lax" + secure;
+}
+function getSessionId() {
+  const key = "void_analytics_session";
+  let id = window.localStorage.getItem(key);
+  if (!id) {
+    id = Array.from(crypto.getRandomValues(new Uint8Array(16)), (v) => v.toString(16).padStart(2,"0")).join("");
+    window.localStorage.setItem(key, id);
+  }
+  return id;
+}
+function slugify(value: string) {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80);
+}
+function messageOf(error: unknown) {
+  return error instanceof Error ? error.message : "Something went wrong. Please try again.";
+}
 
-  const filteredScripts = useMemo(() => scripts.filter(s => (s.name + " " + s.game + " " + s.description).toLowerCase().includes(search.toLowerCase())), [scripts, search]);
-  const setPage = (page: string) => { setActive(page); setNavOpen(false); };
-  const copyText = async (text: string, success: string) => {
-    try { await navigator.clipboard.writeText(text); setEditorNotice(success); }
-    catch { setEditorNotice("Select the text and copy it manually."); }
-  };
-  const toggleSaved = (id: number) => setSaved(old => old.includes(id) ? old.filter(x => x !== id) : [...old, id]);
-  const openEditor = (script?: Script) => {
-    if (script) { setEditorName(script.name.replace(/ /g, "-") + ".lua"); setEditorCode("-- " + script.name + "\n-- Paste or write your Lua code here.\n"); }
-    setPage("Editor");
-  };
-  const navItems = [
-    ["Home", "home"], ["Scripts", "scripts"], ["Saved scripts", "saved"], ["Script editor", "editor"],
-    ["Roadmap", "roadmap"], ["Key system", "keys"], ["Notifications", "bell"], ["Settings", "settings"],
-  ];
-  const pageTitle: Record<string, string> = { Home: "Your workspace.", Scripts: "Script library.", "Saved scripts": "Your saved scripts.", Editor: "Build something.", Roadmap: "What's shipping.", "Key system": "Access center.", Notifications: "Updates & activity.", Settings: "Make it yours.", Profile: "Your profile.", Admin: "Control room." };
+function App() {
+  const [themeId,setThemeId] = useState("spotlight");
+  const [accent,setAccent] = useState("#f5f5f5");
+  const [active,setActive] = useState("Home");
+  const [adminTab,setAdminTab] = useState("Overview");
+  const [navOpen,setNavOpen] = useState(false);
+  const [session,setSession] = useState<Session|null>(null);
+  const [user,setUser] = useState<User|null>(null);
+  const [profile,setProfile] = useState<Profile>(emptyProfile);
+  const [isAdmin,setIsAdmin] = useState(false);
+  const [authMode,setAuthMode] = useState<"login"|"signup">("login");
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [displayName,setDisplayName] = useState("");
+  const [authBusy,setAuthBusy] = useState(false);
+  const [authMessage,setAuthMessage] = useState("");
+  const [showPassword,setShowPassword] = useState(false);
+  const [search,setSearch] = useState("");
+  const [scripts,setScripts] = useState<ScriptRecord[]>([]);
+  const [scriptsBusy,setScriptsBusy] = useState(false);
+  const [scriptError,setScriptError] = useState("");
+  const [saved,setSaved] = useState<string[]>([]);
+  const [roadmap,setRoadmap] = useState<Array<{id:string;title:string;game_name:string;notes:string;progress:number;status:string}>>([]);
+  const [editorCode,setEditorCode] = useState("-- Void Development Lua editor\n-- Write or paste your Lua code here.\n\nprint(\"Welcome to Void Development\")");
+  const [editorName,setEditorName] = useState("Untitled.lua");
+  const [notice,setNotice] = useState("");
+  const [keyValue,setKeyValue] = useState("");
+  const [keySlug,setKeySlug] = useState("");
+  const [keyResult,setKeyResult] = useState("");
+  const [newKey,setNewKey] = useState("");
+  const [keyRecords,setKeyRecords] = useState<Array<Record<string,unknown>>>([]);
+  const [releaseName,setReleaseName] = useState("");
+  const [releaseSlug,setReleaseSlug] = useState("");
+  const [releaseDescription,setReleaseDescription] = useState("");
+  const [releaseCategory,setReleaseCategory] = useState("Utility");
+  const [releaseBanner,setReleaseBanner] = useState("");
+  const [releaseVideo,setReleaseVideo] = useState("");
+  const [releaseSource,setReleaseSource] = useState("");
+  const [releaseStatus,setReleaseStatus] = useState("draft");
+  const [releaseNotice,setReleaseNotice] = useState("");
+  const [editingScriptId,setEditingScriptId] = useState("");
+  const [protectorSlug,setProtectorSlug] = useState("");
+  const [loaderCode,setLoaderCode] = useState("");
+  const [users,setUsers] = useState<AdminUser[]>([]);
+  const [userSearch,setUserSearch] = useState("");
+  const [analytics,setAnalytics] = useState<Analytics|null>(null);
+  const [analyticsError,setAnalyticsError] = useState("");
+  const [endpointStatus,setEndpointStatus] = useState("Checking endpoint…");
+  const [apiSample,setApiSample] = useState("POST /functions/v1/script-api\nContent-Type: application/json\nAuthorization: Bearer YOUR_USER_ACCESS_TOKEN\n\n{\n  \"action\": \"validate\",\n  \"script\": \"your-script-slug\",\n  \"key\": \"VOID-XX-XXX-XXXX\"\n}");
+  const [auditRows,setAuditRows] = useState<Array<Record<string,unknown>>>([]);
+  const [reducedMotion,setReducedMotion] = useState(false);
+  const [spotlight,setSpotlight] = useState(true);
+  const [notifications,setNotifications] = useState(true);
+  const [layout,setLayout] = useState("Comfortable");
+  const [profileName,setProfileName] = useState("");
+  const [profileBio,setProfileBio] = useState("");
+  const [avatarUrl,setAvatarUrl] = useState("");
+  const [newPassword,setNewPassword] = useState("");
+  const [sessionNotice,setSessionNotice] = useState("");
+  const [cookiePrefs,setCookiePrefs] = useState<CookiePrefs|null>(() => {
+    const savedCookie = readCookie("void_cookie_consent");
+    if (!savedCookie) return null;
+    try { return JSON.parse(savedCookie) as CookiePrefs; } catch { return null; }
+  });
+  const [cookieCustomize,setCookieCustomize] = useState(false);
+  const [cookieAnalytics,setCookieAnalytics] = useState(false);
+  const [cookiePersonalization,setCookiePersonalization] = useState(true);
+  const [cookieNotice,setCookieNotice] = useState("");
+
+  const setPage = (page:string) => { setActive(page); setNavOpen(false); setNotice(""); };
+  const apiCall = useCallback(async <T,>(action:string,body?:Record<string,unknown>):Promise<T> => {
+    const token = session?.access_token;
+    const response = await fetch(scriptApiUrl,{method:"POST",headers:{"Content-Type":"application/json","apikey":supabasePublicKey,...(token?{Authorization:"Bearer "+token}:{})},body:JSON.stringify({action,...(body||{})})});
+    const data = await response.json().catch(()=>({error:"The API returned an invalid response."}));
+    if (!response.ok) throw new Error(typeof data.error==="string"?data.error:"Request failed ("+response.status+").");
+    return data as T;
+  },[session]);
+
+  const refreshProfile = useCallback(async (activeUser:User|null) => {
+    if (!activeUser) { setProfile(emptyProfile); setProfileName(""); setProfileBio(""); setAvatarUrl(""); setIsAdmin(false); return; }
+    setEmail(activeUser.email||"");
+    const [{data:profileData},{data:roleData}] = await Promise.all([
+      supabase.from("ario_profiles").select("username,display_name,bio,avatar_url,role,banned").eq("id",activeUser.id).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id",activeUser.id).eq("role","admin").maybeSingle()
+    ]);
+    const p = {...emptyProfile,...(profileData||{})} as Profile;
+    setProfile(p); setProfileName(p.display_name||p.username||activeUser.email?.split("@")[0]||"Member"); setProfileBio(p.bio||""); setAvatarUrl(p.avatar_url||""); setIsAdmin(Boolean(roleData));
+  },[]);
+
+  const refreshScripts = useCallback(async () => {
+    setScriptsBusy(true); setScriptError("");
+    try {
+      if (user && isAdmin) {
+        const {data,error} = await supabase.from("scripts").select("id,name,slug,category,description,content,status,release_status,banner_url,showcase_url,view_count,created_at,updated_at").order("updated_at",{ascending:false}).limit(250);
+        if (error) throw error;
+        setScripts((data||[]) as ScriptRecord[]);
+      } else {
+        const {data,error} = await supabase.from("published_script_metadata").select("id,name,slug,category,description,link,is_featured,view_count,created_at,updated_at,release_status,banner_url,showcase_url").order("is_featured",{ascending:false}).order("updated_at",{ascending:false}).limit(100);
+        if (error) throw error;
+        setScripts((data||[]).map((s:Record<string,unknown>)=>({...s,status:"published",content:null})) as ScriptRecord[]);
+      }
+    } catch (error) { setScriptError(messageOf(error)); }
+    finally { setScriptsBusy(false); }
+  },[user,isAdmin]);
+
+  const refreshRoadmap = useCallback(async () => {
+    const {data,error} = await supabase.from("void_roadmap_items").select("id,title,game_name,notes,progress,status").eq("is_public",true).order("sort_order",{ascending:true}).limit(100);
+    if (!error && data) setRoadmap(data as typeof roadmap);
+  },[]);
+
+  const trackEvent = useCallback(async (eventName:"page_view"|"script_view"|"release_view"|"key_validate",path:string) => {
+    if (!cookiePrefs?.analytics) return;
+    try { await apiCall("track-site",{event_name:eventName,path,session_id:getSessionId()}); } catch { /* Analytics must never block the workspace. */ }
+  },[apiCall,cookiePrefs]);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({data}) => {
+      if (!mounted) return;
+      setSession(data.session); setUser(data.session?.user||null);
+      void refreshProfile(data.session?.user||null);
+    });
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,nextSession) => {
+      setSession(nextSession); setUser(nextSession?.user||null);
+      window.setTimeout(() => { void refreshProfile(nextSession?.user||null); },0);
+    });
+    return () => { mounted=false; subscription.unsubscribe(); };
+  },[refreshProfile]);
+
+  useEffect(() => { void refreshScripts(); },[refreshScripts]);
+  useEffect(() => { void refreshRoadmap(); },[refreshRoadmap]);
+  useEffect(() => { if (active==="Home"||active==="Scripts"||active==="Releases") void trackEvent(active==="Scripts"?"script_view":active==="Releases"?"release_view":"page_view","/"+slugify(active)); },[active,trackEvent]);
+  useEffect(() => {
+    let mounted=true;
+    fetch(scriptApiUrl+"?action=health",{headers:{apikey:supabasePublicKey}}).then(async r=>{const d=await r.json();if(mounted)setEndpointStatus(r.ok&&d.ok?"Online · API v"+d.version:"Unhealthy · "+(d.error||r.status));}).catch(()=>{if(mounted)setEndpointStatus("Offline · could not reach API");});
+    return ()=>{mounted=false;};
+  },[]);
+
+  const filteredScripts = useMemo(() => scripts.filter(s => (s.name+" "+s.slug+" "+(s.category||"")+" "+(s.description||"")).toLowerCase().includes(search.toLowerCase())),[scripts,search]);
+  const visibleScripts = active==="Saved scripts" ? filteredScripts.filter(s=>saved.includes(s.slug)) : filteredScripts;
+  const currentTheme = themes.find(t=>t[0]===themeId)||themes[0];
+  const themeStyle = {"--accent":accent} as CSSProperties & {"--accent":string};
+  const userEmail = user?.email||"";
+  const adminTabs = ["Overview","Releases","Key system","Script protector","Lua uploads","Users","Analytics","Endpoint verification","Roadmap","Audit logs"];
+
+  async function handleAuth(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setAuthBusy(true); setAuthMessage("");
+    try {
+      if (authMode==="signup") {
+        const {data,error} = await supabase.auth.signUp({email:email.trim(),password,options:{data:{display_name:displayName.trim()||email.split("@")[0]}}});
+        if (error) throw error;
+        if (!data.session) { setAuthMessage("Account created. Check your email to confirm the address, then sign in."); return; }
+        setAuthMessage("Account created successfully.");
+      } else {
+        const {error} = await supabase.auth.signInWithPassword({email:email.trim(),password});
+        if (error) throw error;
+      }
+      setPage("Home");
+    } catch (error) { setAuthMessage(messageOf(error)); }
+    finally { setAuthBusy(false); }
+  }
+
+  async function signInGoogle() {
+    setAuthBusy(true); setAuthMessage("");
+    const {error} = await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
+    if (error) { setAuthMessage(error.message); setAuthBusy(false); }
+  }
+
+  async function signOut(global=false) {
+    const {error} = await supabase.auth.signOut({scope:global?"global":"local"});
+    setSessionNotice(error?error.message:(global?"Signed out from all sessions supported by the provider.":"Signed out."));
+    if (!error) { setPage("Home"); setIsAdmin(false); }
+  }
+
+  async function saveProfile(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setNotice("");
+    if (!user) { setNotice("Sign in to save your profile."); return; }
+    const username = (profile.username||user.email?.split("@")[0]||"member").trim().slice(0,32);
+    const {error} = await supabase.from("ario_profiles").upsert({id:user.id,username,display_name:profileName.trim().slice(0,60),bio:profileBio.trim().slice(0,280),avatar_url:avatarUrl.trim().slice(0,500),updated_at:new Date().toISOString()},{onConflict:"id"});
+    if (error) { setNotice("Profile save failed: "+error.message); return; }
+    setProfile(p=>({...p,username,display_name:profileName,bio:profileBio,avatar_url:avatarUrl})); setNotice("Profile saved to Supabase.");
+  }
+
+  async function changePassword(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setSessionNotice("");
+    if (newPassword.length<8) { setSessionNotice("Use at least 8 characters for the new password."); return; }
+    const {error} = await supabase.auth.updateUser({password:newPassword});
+    setSessionNotice(error?error.message:"Password updated successfully."); if(!error)setNewPassword("");
+  }
+
+  async function validateKey(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setKeyResult(""); void trackEvent("key_validate","/key-system");
+    try {
+      const result=await apiCall<{valid:boolean;error?:string;script?:{name:string;slug:string};expires_at?:string|null;remaining_uses?:number|null}>("validate",{key:keyValue.trim(),script:keySlug.trim()});
+      setKeyResult(result.valid?"VALID · "+(result.script?.name||keySlug)+" · "+(result.expires_at?"Expires "+new Date(result.expires_at).toLocaleString():"No expiry"):"Invalid key");
+    } catch(error) { setKeyResult(messageOf(error)); }
+  }
+
+  async function loadKeys() {
+    try { const result=await apiCall<{keys:Array<Record<string,unknown>>}>("list-keys"); setKeyRecords(result.keys||[]); }
+    catch(error) { setNotice(messageOf(error)); }
+  }
+  async function createKey(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setNotice("");
+    const chosen=scripts.find(s=>s.slug===keySlug);
+    if(!chosen?.id) { setNotice("Select a published script before creating a key."); return; }
+    try { const result=await apiCall<{key:string}>("create-key",{script_id:chosen.id,label:"Void Development key",expires_in_days:30,max_uses:null}); setNewKey(result.key); await loadKeys(); }
+    catch(error) { setNotice(messageOf(error)); }
+  }
+
+  async function saveRelease(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setReleaseNotice("");
+    if(!user||!isAdmin) { setReleaseNotice("Administrator sign-in is required."); return; }
+    if(!releaseName.trim()||!releaseSlug.trim()) { setReleaseNotice("Add a script name and slug."); return; }
+    const record={name:releaseName.trim().slice(0,120),slug:slugify(releaseSlug||releaseName),category:releaseCategory.trim().slice(0,80)||"Utility",description:releaseDescription.trim().slice(0,2000),content:releaseSource.slice(0,200000),status:releaseStatus,banner_url:releaseBanner.trim()||null,showcase_url:releaseVideo.trim()||null,release_status:releaseStatus==="published"?"active":"working_on",owner_id:user.id,updated_at:new Date().toISOString()};
+    try {
+      const query=editingScriptId?supabase.from("scripts").update(record).eq("id",editingScriptId):supabase.from("scripts").insert(record);
+      const {error}=await query;
+      if(error)throw error;
+      setReleaseNotice("Script saved to the database."); setEditingScriptId(""); setReleaseName("");setReleaseSlug("");setReleaseDescription("");setReleaseBanner("");setReleaseVideo("");setReleaseSource("");setReleaseStatus("draft");
+      await refreshScripts(); setAdminTab("Releases"); setActive("Admin");
+    } catch(error) { setReleaseNotice("Save failed: "+messageOf(error)); }
+  }
+
+  function editRelease(script:ScriptRecord) {
+    setEditingScriptId(script.id);setReleaseName(script.name);setReleaseSlug(script.slug);setReleaseDescription(script.description||"");setReleaseCategory(script.category||"Utility");setReleaseBanner(script.banner_url||"");setReleaseVideo(script.showcase_url||"");setReleaseSource(script.content||"");setReleaseStatus(script.status||"draft");setAdminTab("Lua uploads");setActive("Admin");setNotice("");
+  }
+
+  async function uploadLuaFile(e:ChangeEvent<HTMLInputElement>) {
+    const file=e.target.files?.[0]; if(!file)return;
+    if(!file.name.toLowerCase().endsWith(".lua")&&!file.name.toLowerCase().endsWith(".txt")) {setReleaseNotice("Choose a .lua or .txt source file.");return;}
+    if(file.size>200000) {setReleaseNotice("The upload limit is 200 KB per Lua file.");return;}
+    const source=await file.text();setReleaseSource(source);setReleaseName(old=>old||file.name.replace(/\.(lua|txt)$/i,""));setReleaseSlug(old=>old||slugify(file.name.replace(/\.(lua|txt)$/i,"")));setReleaseNotice("Loaded "+file.name+" into the editor. Save it to store the source in Supabase.");
+  }
+
+  async function prepareLoader(script?:ScriptRecord) {
+    const slug=script?.slug||protectorSlug;
+    if(!slug) {setNotice("Choose a saved script slug first.");return;}
+    const url=window.location.origin+"/api/scripts/load?script="+encodeURIComponent(slug)+"&key=YOUR_VOID_KEY";
+    const loader="-- Protected by Void Development\n-- Replace YOUR_VOID_KEY with a valid key.\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()";
+    setLoaderCode(loader);setProtectorSlug(slug);setNotice("Loader generated for this website domain. The Worker proxy must be deployed for this URL to work.");
+  }
+
+  async function loadAdminUsers() {
+    setNotice("");
+    try { const result=await apiCall<{users:AdminUser[]}>("admin-users");setUsers(result.users||[]); }
+    catch(error) { setNotice(messageOf(error)); }
+  }
+  async function updateAdminUser(target:AdminUser,changes:{role?:string;banned?:boolean}) {
+    setNotice("");
+    try { await apiCall("admin-update-user",{user_id:target.id,...changes});await loadAdminUsers();setNotice("User updated."); }
+    catch(error) { setNotice(messageOf(error)); }
+  }
+  async function loadAnalytics() {
+    setAnalyticsError("");
+    try { const data=await apiCall<Analytics>("admin-analytics");setAnalytics(data); }
+    catch(error) { setAnalyticsError(messageOf(error)); }
+  }
+  async function loadAudit() {
+    const {data,error}=await supabase.from("void_audit_logs").select("id,actor_id,action,target_type,target_id,metadata,created_at").order("created_at",{ascending:false}).limit(100);
+    if(error) {setNotice(error.message);return;} setAuditRows((data||[]) as Array<Record<string,unknown>>);
+  }
+  async function revokeKey(id:string) {
+    try { await apiCall("revoke-key",{id}); await loadKeys();setNotice("Key revoked."); }
+    catch(error) {setNotice(messageOf(error));}
+  }
+
+  function chooseCookies(analyticsAllowed:boolean,personalizationAllowed:boolean) {
+    const prefs:CookiePrefs={necessary:true,analytics:analyticsAllowed,personalization:personalizationAllowed,decidedAt:new Date().toISOString()};
+    writeCookie("void_cookie_consent",JSON.stringify(prefs));setCookiePrefs(prefs);setCookieNotice("Your cookie preferences have been saved.");setCookieCustomize(false);
+  }
+
+  const iconForPage = (label:string) => navItems.find(i=>i[0]===label)?.[1]||"home";
+  const isAuthPage=active==="Sign in"||active==="Sign up";
+  const pageTitle:Record<string,string>={"Scripts":"Explore the script library.","Saved scripts":"Your saved collection.","Releases":"Latest releases.","Script editor":"Your code workspace.","Themes":"Your look, your rules.","Script protector":"Publish without exposing source on public pages.","Lua uploads":"Release management.","Key system":"Access verification.","Key history":"Key activity.","Roadmap":"What we’re building.","Notifications":"Updates from Void Development.","Analytics":"Real traffic, not demo numbers.","API & endpoints":"Verify the services powering your workspace.","Activity log":"Your recent workspace activity.","Community":"The creator space.","Changelog":"Product updates.","Help center":"Guides and support.","Profile":"Make your profile yours.","Sessions":"Account security.","Settings":"Workspace preferences.","Admin panel":"Manage users, releases, keys, and protection."};
 
   return (
-    <div className={`app theme-${theme} ${reducedMotion ? "reduce-motion" : ""} ${spotlight ? "spotlight-on" : ""}`} style={{ "--accent": accent } as CSSProperties & { "--accent": string } }>
-      <div className="ambient ambient-one" /><div className="ambient ambient-two" />
+    <div className={"app theme-"+themeId+(reducedMotion?" reduce-motion":"")+(spotlight?" spotlight-on":"")} style={themeStyle}>
+      <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
       <header className="topbar">
-        <button className="brand" onClick={() => setPage("Home")} aria-label="VOID home"><img src={logo} alt="VOID logo" /><span className="brand-word">VOID<span className="brand-dot">.</span></span></button>
-        <div className="topbar-right">
-          <span className="system-status"><i /> All systems nominal</span>
-          <button className="icon-button notification-button" onClick={() => setPage("Notifications")} aria-label="Notifications"><Icon name="bell" /><span className="notification-dot" /></button>
-          {signedIn ? <button className="profile-chip" onClick={() => setPage("Profile")}><span className="avatar">{profileName.slice(0,1).toUpperCase()}</span><span>{profileName}</span></button> : <button className="button button-light top-login" onClick={() => { setAuthMode("login"); setPage("Sign in"); }}>Sign in <Icon name="arrow" /></button>}
-          <button className={`menu-trigger ${navOpen ? "menu-active" : ""}`} onClick={() => setNavOpen(v => !v)} aria-expanded={navOpen}><Icon name="menu" /> <span>Navigate</span></button>
-        </div>
+        <button className="brand" onClick={()=>setPage("Home")} aria-label="Void Development home"><img src={logo} alt="Void Development logo"/><span className="brand-word">Void Development<span className="brand-dot">.</span></span></button>
+        <div className="topbar-right"><span className="system-status"><i/> {endpointStatus.startsWith("Online")?"API online":"Workspace"}</span><button className="icon-button notification-button" onClick={()=>setPage("Notifications")} aria-label="Notifications"><Icon name="bell"/><span className="notification-dot"/></button>{user?<button className="profile-chip" onClick={()=>setPage("Profile")}><span className="avatar">{(profileName||userEmail||"V").slice(0,1).toUpperCase()}</span><span>{profileName||userEmail}</span></button>:<button className="button button-light top-login" onClick={()=>{setAuthMode("login");setPage("Sign in");}}>Sign in <Icon name="arrow"/></button>}<button className={"menu-trigger"+(navOpen?" menu-active":"")} onClick={()=>setNavOpen(v=>!v)} aria-expanded={navOpen}><Icon name="menu"/> <span>Navigate</span></button></div>
       </header>
 
-      {navOpen && <><button className="nav-scrim" aria-label="Close navigation" onClick={() => setNavOpen(false)} /><aside className="nav-drawer"><div className="drawer-heading"><span>WORKSPACE</span><button className="icon-button" onClick={() => setNavOpen(false)}>×</button></div><div className="drawer-links">{navItems.map(([label, icon]) => <button key={label} className={active === label ? "drawer-link selected" : "drawer-link"} onClick={() => setPage(label)}><Icon name={icon} /><span>{label}</span>{label === "Notifications" && <b className="drawer-count">2</b>}</button>)}</div><div className="drawer-bottom"><div className="drawer-user"><span className="avatar">{signedIn ? profileName.slice(0,1).toUpperCase() : "V"}</span><div><strong>{signedIn ? profileName : "Guest session"}</strong><small>{signedIn ? "Member account" : "Preview workspace"}</small></div></div><button className="drawer-link" onClick={() => setPage("Profile")}><Icon name="profile" /> Profile settings</button><button className="drawer-link admin-nav" onClick={() => setPage("Admin")}><Icon name="admin" /> Admin panel <span className="admin-label">CONTROL</span></button></div></aside></>}
+      {navOpen&&<><button className="nav-scrim" aria-label="Close navigation" onClick={()=>setNavOpen(false)}/><aside className="nav-drawer"><div className="drawer-heading"><span>VOID DEVELOPMENT · NAVIGATION</span><button className="icon-button" onClick={()=>setNavOpen(false)}><Icon name="close"/></button></div><div className="drawer-links">{navItems.filter(([label])=>label!=="Admin panel"||isAdmin).map(([label,icon])=><button key={label} className={active===label?"drawer-link selected":"drawer-link"} onClick={()=>setPage(label)}><Icon name={icon}/><span>{label}</span>{label==="Themes"&&<span className="drawer-count">35</span>}{label==="Admin panel"&&<span className="admin-label">ADMIN</span>}</button>)}</div><div className="drawer-bottom"><div className="drawer-user"><span className="avatar">{user?(profileName||userEmail||"V").slice(0,1).toUpperCase():"V"}</span><div><strong>{user?profileName||userEmail:"Guest session"}</strong><small>{user?(isAdmin?"Administrator":"Authenticated member"):"Sign in to sync your workspace"}</small></div></div>{user?<button className="drawer-link" onClick={()=>void signOut()}><Icon name="lock"/> Sign out</button>:<button className="drawer-link" onClick={()=>{setAuthMode("login");setPage("Sign in");}}><Icon name="profile"/> Sign in / Sign up</button>}</div></aside></>}
 
       <main className="main-shell">
-        {active === "Home" && <section className="hero">
-          <div className="eyebrow"><span className="eyebrow-line" /> SCRIPT MANAGEMENT PLATFORM <span className="eyebrow-pill">V 2.0</span></div>
-          <h1 className="hero-title">Make your next move<br /> <span className="gradient-title">out of this world.</span></h1>
-          <p className="hero-subtitle">One clean workspace for your scripts, releases, and tools.<br className="desktop-break" /> Built for creators who like things precise.</p>
-          <div className="hero-actions"><button className="button button-light" onClick={() => setPage("Scripts")}>Explore scripts <Icon name="arrow" /></button><button className="button button-ghost" onClick={() => openEditor()}>Open editor <Icon name="editor" /></button></div>
-          <div className="hero-meta"><span><i className="live-pulse" /> COMMUNITY WORKSPACE</span><span className="meta-separator">/</span><span>DESIGNED FOR EVERY SCREEN</span></div>
-        </section>}
+        {active==="Home"&&<section className="hero"><div className="eyebrow"><span className="eyebrow-line"/> SCRIPT MANAGEMENT PLATFORM <span className="eyebrow-pill">VOID DEVELOPMENT</span></div><h1 className="hero-title">Build. Protect. Release.<br/><span className="gradient-title">Your next move starts here.</span></h1><p className="hero-subtitle">A polished workspace for your Lua releases, key verification, and creator tools.<br className="desktop-break"/> One place to manage the entire release flow.</p><div className="hero-actions"><button className="button button-light" onClick={()=>setPage("Scripts")}>Explore scripts <Icon name="arrow"/></button><button className="button button-ghost" onClick={()=>setPage("Script protector")}>Open script protector <Icon name="shield"/></button></div><div className="hero-meta"><span><i className="live-pulse"/> {endpointStatus.toUpperCase()}</span><span className="meta-separator">/</span><span>35 DARK THEMES</span><span className="meta-separator">/</span><span>RESPONSIVE WORKSPACE</span></div></section>}
+        {!["Home","Admin panel"].includes(active)&&!isAuthPage&&<section className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line"/> VOID DEVELOPMENT WORKSPACE</div><h1>{pageTitle[active]||active}</h1><p>{active==="Script protector"?"Keep source out of public-facing script cards and generate your site-specific loader.":active==="Analytics"?"Numbers come from recorded, consented visits in your database.":active==="Profile"?"Your public profile details and preferences.":"Connected to your existing Void Development workspace."}</p></div><button className="button button-ghost" onClick={()=>setPage("Home")}>← Home</button></section>}
 
-        {active !== "Home" && <section className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> VOID WORKSPACE</div><h1>{pageTitle[active] || active}</h1><p>{active === "Admin" ? "Manage releases, roadmap progress, and workspace controls." : active === "Editor" ? "A focused place to write, review, and copy Lua snippets." : "Everything you need, without the clutter."}</p></div><button className="button button-ghost" onClick={() => setPage("Home")}>← Home</button></section>}
+        {(active==="Home"||active==="Scripts"||active==="Saved scripts"||active==="Releases")&&<><section className="stats-grid"><div className="stat-card"><div className="stat-top"><span>PUBLISHED SCRIPTS</span><span className="stat-icon"><Icon name="scripts"/></span></div><strong>{scripts.filter(s=>s.status==="published").length.toString().padStart(2,"0")}</strong><small>From the connected script library</small></div><div className="stat-card"><div className="stat-top"><span>YOUR SAVED</span><span className="stat-icon"><Icon name="saved"/></span></div><strong>{saved.length.toString().padStart(2,"0")}</strong><small>Saved in this browser</small></div><div className="stat-card"><div className="stat-top"><span>ROADMAP</span><span className="stat-icon"><Icon name="roadmap"/></span></div><strong>{roadmap.filter(r=>r.progress===100).length}/{roadmap.length}</strong><small>Public milestones</small></div><div className="stat-card"><div className="stat-top"><span>AUTH STATUS</span><span className="stat-icon"><Icon name="shield"/></span></div><strong className="stat-live">{user?"CONNECTED":"GUEST"}</strong><small>{user?userEmail:"Sign in to sync your account"}</small></div></section>
+          <section className="section-block"><div className="section-heading"><div><span className="section-kicker">VOID LIBRARY</span><h2>{active==="Saved scripts"?"Saved scripts":active==="Releases"?"Latest releases":active==="Scripts"?"Published scripts":"Featured scripts"}</h2></div><div className="section-tools"><label className="search-box"><Icon name="search"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search scripts..."/></label>{active==="Home"&&<button className="text-button" onClick={()=>setPage("Scripts")}>View all <Icon name="arrow"/></button>}</div></div>
+            {scriptsBusy?<div className="empty-state">Loading scripts from Supabase…</div>:scriptError?<div className="empty-state">Could not load scripts: {scriptError}<button className="text-button" onClick={()=>void refreshScripts()}>Retry</button></div>:<div className="script-grid">{visibleScripts.filter(s=>active!=="Home"||s.is_featured||true).map(script=><article className="script-card" key={script.id}>{script.banner_url&&<img className="release-banner" src={script.banner_url} alt={script.name+" banner"} loading="lazy"/>}<div className="script-card-top"><span className="script-symbol">{"</>"}</span><span className={"status status-"+(script.status||"published").replace(/ /g,"-")}><i/>{script.status||"published"}</span></div><h3>{script.name}</h3><p>{script.description||"A Void Development release."}</p><div className="script-game"><span>SLUG / CATEGORY</span><strong>{script.slug} · {script.category||"Utility"}</strong></div>{script.showcase_url&&<a className="video-link" href={script.showcase_url} target="_blank" rel="noreferrer">▶ Watch showcase <Icon name="arrow"/></a>}<div className="protected-card"><Icon name="shield"/><strong>THIS SCRIPT IS PROTECTED BY VOID DEVELOPMENT</strong><small>Source is not shown in the public library.</small></div><div className="script-card-footer"><span className="updated">{script.view_count||0} views</span><div className="script-actions"><button className={saved.includes(script.slug)?"icon-button is-saved":"icon-button"} onClick={()=>setSaved(old=>old.includes(script.slug)?old.filter(s=>s!==script.slug):[...old,script.slug])} aria-label="Save script"><Icon name="saved"/></button><button className="button button-small" onClick={()=>{setProtectorSlug(script.slug);setPage("Key system");}}>Get access <Icon name="arrow"/></button></div></div></article>)}{visibleScripts.length===0&&<div className="empty-state">No scripts found. Published releases will appear here after an administrator publishes them.</div>}</div>}</section>
+          {active==="Home"&&<section className="lower-grid"><div className="panel roadmap-preview"><div className="panel-heading"><div><span className="section-kicker">IN DEVELOPMENT</span><h2>Roadmap preview</h2></div><button className="icon-button" onClick={()=>setPage("Roadmap")} aria-label="View roadmap"><Icon name="arrow"/></button></div>{roadmap.slice(0,4).map(item=><div className="roadmap-row" key={item.id}><div className="roadmap-label"><strong>{item.title}</strong><span>{item.progress}%</span></div><div className="progress-track"><div style={{width:item.progress+"%"}}/></div></div>)}<button className="text-button roadmap-link" onClick={()=>setPage("Roadmap")}>Open roadmap <Icon name="arrow"/></button></div><div className="panel quick-panel"><span className="section-kicker">QUICK ACTIONS</span><h2>Pick up where you left off.</h2><p>Jump into protection, release management, or workspace personalization.</p>{[["Script protector","Protect a release and generate a loader","shield"],["Themes","Choose from 35 dark themes","palette"],["Profile","Customize your public profile","profile"]].map(([page,desc,icon])=><button className="quick-action" key={page} onClick={()=>setPage(page)}><span className="quick-icon"><Icon name={icon}/></span><span><strong>{page}</strong><small>{desc}</small></span><Icon name="arrow"/></button>)}</div></section>}</>}
 
-        {(active === "Home" || active === "Scripts" || active === "Saved scripts") && <>
-          <section className="stats-grid">
-            <div className="stat-card"><div className="stat-top"><span>AVAILABLE SCRIPTS</span><span className="stat-icon"><Icon name="scripts" /></span></div><strong>{scripts.length.toString().padStart(2,"0")}</strong><small>Curated workspace library</small></div>
-            <div className="stat-card"><div className="stat-top"><span>YOUR SAVED</span><span className="stat-icon"><Icon name="saved" /></span></div><strong>{saved.length.toString().padStart(2,"0")}</strong><small>Quick access collection</small></div>
-            <div className="stat-card"><div className="stat-top"><span>ROADMAP</span><span className="stat-icon"><Icon name="roadmap" /></span></div><strong>{roadmap.filter(r=>r.progress===100).length}/{roadmap.length}</strong><small>Milestones completed</small></div>
-            <div className="stat-card"><div className="stat-top"><span>WORKSPACE</span><span className="stat-icon"><Icon name="shield" /></span></div><strong className="stat-live">READY</strong><small>Local preview mode</small></div>
-          </section>
-          <section className="section-block"><div className="section-heading"><div><span className="section-kicker">DISCOVER</span><h2>{active === "Saved scripts" ? "Saved scripts" : active === "Scripts" ? "All scripts" : "Recently updated"}</h2></div><div className="section-tools"><label className="search-box"><Icon name="search" /><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search scripts..." /></label>{active === "Home" && <button className="text-button" onClick={()=>setPage("Scripts")}>View all <Icon name="arrow" /></button>}</div></div>
-            <div className="script-grid">{filteredScripts.filter(s=>active!=="Saved scripts" || saved.includes(s.id)).map(script=><article className="script-card" key={script.id}><div className="script-card-top"><span className="script-symbol">{"</>"}</span><span className={"status status-"+script.status.toLowerCase().replace(/ /g, "-")}><i />{script.status}</span></div><h3>{script.name}</h3><p>{script.description}</p><div className="script-game"><span>GAME / CATEGORY</span><strong>{script.game}</strong></div><div className="script-card-footer"><span className="updated">↻ {script.updated}</span><div className="script-actions"><button className={saved.includes(script.id)?"icon-button is-saved":"icon-button"} onClick={()=>toggleSaved(script.id)} aria-label="Save script"><Icon name="saved" /></button><button className="button button-small" onClick={()=>openEditor(script)}>Open <Icon name="arrow" /></button></div></div></article>)}
-            {filteredScripts.filter(s=>active!=="Saved scripts" || saved.includes(s.id)).length===0 && <div className="empty-state">No scripts found. Try another search or save a script from the library.</div>}</div>
-          </section>
-          {active==="Home" && <section className="lower-grid"><div className="panel roadmap-preview"><div className="panel-heading"><div><span className="section-kicker">IN DEVELOPMENT</span><h2>Roadmap preview</h2></div><button className="icon-button" onClick={()=>setPage("Roadmap")} aria-label="View roadmap"><Icon name="arrow" /></button></div>{roadmap.slice(0,3).map(item=><div className="roadmap-row" key={item.game}><div className="roadmap-label"><strong>{item.game}</strong><span>{item.progress}%</span></div><div className="progress-track"><div style={{width:item.progress+"%"}} /></div></div>)}<button className="text-button roadmap-link" onClick={()=>setPage("Roadmap")}>Open full roadmap <Icon name="arrow" /></button></div><div className="panel quick-panel"><span className="section-kicker">QUICK ACTIONS</span><h2>Pick up where you left off.</h2><p>Open your editor or organize your personal script collection.</p><button className="quick-action" onClick={()=>openEditor()}><span className="quick-icon"><Icon name="editor" /></span><span><strong>Launch script editor</strong><small>Write or paste a Lua snippet</small></span><Icon name="arrow" /></button><button className="quick-action" onClick={()=>setPage("Settings")}><span className="quick-icon"><Icon name="settings" /></span><span><strong>Personalize workspace</strong><small>Theme, accent, and motion</small></span><Icon name="arrow" /></button></div></section>}
-        </>}
+        {active==="Themes"&&<section className="panel theme-gallery"><div className="panel-heading"><div><span className="section-kicker">35 COLORWAYS</span><h2>Choose your workspace theme</h2><p className="muted">Every theme keeps the interface dark and uses its color as a subtle accent.</p></div><span className="eyebrow-pill">{themes.length} THEMES</span></div><div className="theme-options theme-gallery-grid">{themes.map(t=><button key={t[0]} className={themeId===t[0]?"theme-option theme-selected":"theme-option"} onClick={()=>{setThemeId(t[0]);setAccent(t[2]);}}><span className="theme-swatch" style={{background:t[2],boxShadow:"0 0 16px "+t[2]+"33"}}/><span>{t[1]}</span>{themeId===t[0]&&<Icon name="check"/>}</button>)}</div><label className="setting-row"><span><strong>Custom accent</strong><small>Pick any color for the active theme</small></span><input type="color" value={accent} onChange={e=>setAccent(e.target.value)}/></label><button className="button button-light" onClick={()=>{try{localStorage.setItem("void-theme",themeId);localStorage.setItem("void-accent",accent);setNotice("Theme saved on this device.");}catch{setNotice("Could not save this theme on the device.");}}>Save theme</button>{notice&&<p className="inline-notice">{notice}</p>}</section>}
 
-        {active === "Editor" && <section className="editor-panel panel"><div className="editor-toolbar"><div className="editor-file"><span className="file-dot" /><input value={editorName} onChange={e=>setEditorName(e.target.value)} aria-label="File name" /></div><div className="editor-buttons"><span className="language-badge">LUA</span><button className="button button-ghost button-small" onClick={()=>setEditorCode("")}>Clear</button><button className="button button-light button-small" onClick={()=>void copyText(editorCode,"Code copied to clipboard.")}>Copy code ↗</button></div></div><textarea className="code-editor" spellCheck={false} value={editorCode} onChange={e=>{setEditorCode(e.target.value);setEditorNotice("");}} aria-label="Lua code editor" /><div className="editor-footer"><span><i className="live-pulse" /> Editor ready · {editorCode.split("\n").length} lines</span><span>Lua · UTF-8</span></div>{editorNotice && <p className="inline-notice">{editorNotice}</p>}<div className="editor-note"><Icon name="shield" /><p><strong>Protection note</strong><br />This editor is for writing and copying code. Real server-side key verification and script protection must be configured on a trusted backend; this preview does not claim to validate or obfuscate scripts.</p></div></section>}
+        {active==="Script editor"&&<section className="editor-panel panel"><div className="editor-toolbar"><div className="editor-file"><span className="file-dot"/><input value={editorName} onChange={e=>setEditorName(e.target.value)} aria-label="File name"/></div><div className="editor-buttons"><span className="language-badge">LUA</span><button className="button button-ghost button-small" onClick={()=>setEditorCode("")}>Clear</button><button className="button button-light button-small" onClick={()=>{void navigator.clipboard.writeText(editorCode).then(()=>setNotice("Code copied."),()=>setNotice("Select the text and copy it manually."));}}>Copy code ↗</button></div></div><textarea className="code-editor" spellCheck={false} value={editorCode} onChange={e=>setEditorCode(e.target.value)} aria-label="Lua code editor"/><div className="editor-footer"><span><i className="live-pulse"/> Editor ready · {editorCode.split("\n").length} lines</span><span>Lua · UTF-8</span></div>{notice&&<p className="inline-notice">{notice}</p>}<div className="editor-note"><Icon name="shield"/><p><strong>Protected release workflow</strong><br/>Source saved here stays in your editor until you upload it. To publish source for a Roblox client loader, remember that client-executed code can be inspected by the client that receives it.</p></div></section>}
 
-        {active === "Roadmap" && <section className="panel roadmap-page"><div className="panel-heading"><div><span className="section-kicker">RELEASE TRACKER</span><h2>Game support & loader progress</h2><p className="muted">Admin edits here are preview-only until connected to a database.</p></div><span className="eyebrow-pill">{roadmap.filter(r=>r.progress===100).length} COMPLETED</span></div>{roadmap.map((item,i)=><div className="roadmap-item" key={item.game}><div className="roadmap-item-top"><div><span className="roadmap-number">{String(i+1).padStart(2,"0")}</span><strong>{item.game}</strong></div><span className={"roadmap-status "+(item.progress===100?"done":"")}>{item.status}</span></div><div className="roadmap-edit"><input aria-label={"Progress for "+item.game} type="range" min="0" max="100" step="5" value={item.progress} onChange={e=>setRoadmap(old=>old.map((r,j)=>j===i?{...r,progress:Number(e.target.value),status:Number(e.target.value)===100?"Included":Number(e.target.value)===0?"Planned":"In progress"}:r))}/><strong>{item.progress}%</strong></div><div className="progress-track"><div style={{width:item.progress+"%"}} /></div></div>)}<div className="add-roadmap"><input value={newGame} onChange={e=>setNewGame(e.target.value)} placeholder="Add a game or loader milestone..." /><button className="button button-light" onClick={()=>{if(newGame.trim()){setRoadmap(old=>[...old,{game:newGame.trim(),progress:0,status:"Planned"}]);setNewGame("");}}}>Add milestone +</button></div></section>}
+        {(active==="Script protector"||active==="Lua uploads")&&<section className="protector-grid"><div className="panel settings-panel"><span className="section-kicker">SOURCE UPLOAD</span><h2>{editingScriptId?"Edit release source":"Protect a Lua release"}</h2><p className="muted">Upload a .lua file or paste source, then save it to your connected script database. Only admins can publish releases.</p><form className="release-form" onSubmit={saveRelease}><label className="form-label">SCRIPT NAME<input required value={releaseName} onChange={e=>{setReleaseName(e.target.value);if(!releaseSlug)setReleaseSlug(slugify(e.target.value));}} placeholder="My script release"/></label><label className="form-label">PUBLIC SLUG<input required value={releaseSlug} onChange={e=>setReleaseSlug(slugify(e.target.value))} placeholder="my-script-release"/></label><label className="form-label">DESCRIPTION<textarea value={releaseDescription} onChange={e=>setReleaseDescription(e.target.value)} rows={3} placeholder="What does this release do?"/></label><label className="form-label">LUA SOURCE FILE<input type="file" accept=".lua,.txt,text/plain" onChange={e=>void uploadLuaFile(e)}/></label><label className="form-label">SOURCE CODE<textarea className="source-textarea" value={releaseSource} onChange={e=>setReleaseSource(e.target.value)} rows={10} maxLength={200000} placeholder="Paste Lua source here (max 200 KB)…"/></label><div className="two-fields"><label className="form-label">CATEGORY<select value={releaseCategory} onChange={e=>setReleaseCategory(e.target.value)}><option>Utility</option><option>Interface</option><option>Loader</option><option>Library</option><option>Other</option></select></label><label className="form-label">STATUS<select value={releaseStatus} onChange={e=>setReleaseStatus(e.target.value)}><option value="draft">Draft</option><option value="published">Published</option><option value="hidden">Hidden</option></select></label></div><label className="form-label">BANNER IMAGE URL<input type="url" value={releaseBanner} onChange={e=>setReleaseBanner(e.target.value)} placeholder="https://…"/></label><label className="form-label">YOUTUBE SHOWCASE URL<input type="url" value={releaseVideo} onChange={e=>setReleaseVideo(e.target.value)} placeholder="https://youtube.com/watch?v=…"/></label><button className="button button-light" type="submit" disabled={!user||!isAdmin}>{editingScriptId?"Save release":"Save release to Supabase"} <Icon name="arrow"/></button>{!isAdmin&&<p className="muted">Sign in with an account that has the admin role to upload and publish scripts.</p>}{releaseNotice&&<p className="inline-notice">{releaseNotice}</p>}</form></div><div className="panel settings-panel"><span className="section-kicker">LOADER GENERATOR</span><h2>Website-specific loadstring</h2><p className="muted">Select a saved script to generate a loader using this website's current domain and your existing key-verification API.</p><label className="form-label">SCRIPT SLUG<select value={protectorSlug} onChange={e=>setProtectorSlug(e.target.value)}><option value="">Choose a script…</option>{scripts.map(s=><option key={s.id} value={s.slug}>{s.name} · {s.slug}</option>)}</select></label><button className="button button-light" onClick={()=>void prepareLoader()}>Generate loader</button><textarea className="loader-output" readOnly value={loaderCode} placeholder="Your website-specific loadstring appears here…"/><button className="button button-ghost" disabled={!loaderCode} onClick={()=>void navigator.clipboard.writeText(loaderCode).then(()=>setNotice("Loader copied."),()=>setNotice("Copy the loader text manually."))}>Copy loadstring</button><div className="protected-card protected-card-large"><Icon name="shield"/><strong>THIS SCRIPT IS PROTECTED BY VOID DEVELOPMENT</strong><small>Public cards do not display Lua source.</small></div><p className="muted">Technical note: a valid key allows the Roblox client to receive source code for execution. No client-side loader can make that source impossible for its recipient to inspect.</p>{notice&&<p className="inline-notice">{notice}</p>}</div></section>}
 
-        {active === "Key system" && <section className="panel key-panel"><div className="key-illustration"><div className="key-orbit">⌁</div><span className="section-kicker">VOID ACCESS</span><h2>One place for your access.</h2><p>Enter a key to check its format in this preview. Real validation needs a secured server endpoint and a connected key database.</p></div><form className="key-form" onSubmit={e=>{e.preventDefault();setKeyNotice(keyValue.trim()?"Preview only: no live key server is connected, so this key has not been verified.":"Enter a key first.");}}><label htmlFor="key-input">YOUR ACCESS KEY</label><input id="key-input" value={keyValue} onChange={e=>{setKeyValue(e.target.value);setKeyNotice("");}} placeholder="VOID-XXXX-XXXX-XXXX" /><button className="button button-light" type="submit">Check key <Icon name="arrow" /></button>{keyNotice&&<p className="inline-notice">{keyNotice}</p>}<div className="key-history"><h3><Icon name="lock" /> Key history</h3><div className="history-row"><span>No verified key events yet</span><small>Waiting for backend</small></div></div></form></section>}
+        {active==="Key system"&&<section className="key-panel panel"><div className="key-illustration"><div className="key-orbit">⌁</div><span className="section-kicker">LIVE KEY VERIFICATION</span><h2>Verify a Void key.</h2><p>Requests are checked by your deployed Supabase Edge Function and existing script-key database. Invalid keys never receive script source.</p><div className="endpoint-pill"><i/> {endpointStatus}</div></div><div className="key-form"><form onSubmit={validateKey}><label className="form-label">SCRIPT SLUG<input required value={keySlug} onChange={e=>setKeySlug(e.target.value)} placeholder="your-script-slug"/></label><label className="form-label">ACCESS KEY<input required value={keyValue} onChange={e=>setKeyValue(e.target.value)} placeholder="VOID-XX-XXX-XXXX"/></label><button className="button button-light" type="submit">Verify key <Icon name="arrow"/></button></form>{keyResult&&<p className={keyResult.startsWith("VALID")?"success-notice":"inline-notice"}>{keyResult}</p>}<div className="key-history"><h3><Icon name="lock"/> Key history</h3>{keyRecords.length?keyRecords.slice(0,8).map((k,i)=><div className="history-row" key={String(k.id||i)}><span>{String(k.key_prefix||"Key")} · {String(k.label||"Access key")}</span><small>{k.revoked_at?"Revoked":String(k.use_count||0)+" uses"}</small></div>):<div className="history-row"><span>Admin key records load in the Admin panel.</span><button className="text-button" onClick={()=>{setPage("Admin panel");setAdminTab("Key system");}}>Open admin keys</button></div>}</div></div></section>}
 
-        {active === "Settings" && <section className="settings-grid"><div className="panel settings-panel"><span className="section-kicker">APPEARANCE</span><h2>Make it feel like yours.</h2><p className="muted">Pick a dark theme. Changes apply instantly to this preview.</p><div className="theme-options">{themes.map(t=><button key={t.id} className={theme===t.id?"theme-option theme-selected":"theme-option"} onClick={()=>{setTheme(t.id);setAccent(t.color);}}><span className="theme-swatch" style={{background:t.color}} /><span>{t.name}</span>{theme===t.id&&<Icon name="check" />}</button>)}</div><label className="setting-row"><span><strong>Accent color</strong><small>Choose a custom highlight color</small></span><input type="color" value={accent} onChange={e=>setAccent(e.target.value)} /></label><label className="setting-row"><span><strong>Spotlight glow</strong><small>Ambient light behind the interface</small></span><input type="checkbox" checked={spotlight} onChange={e=>setSpotlight(e.target.checked)} /></label><label className="setting-row"><span><strong>Reduced motion</strong><small>Minimize moving effects</small></span><input type="checkbox" checked={reducedMotion} onChange={e=>setReducedMotion(e.target.checked)} /></label><label className="setting-row"><span><strong>Dashboard density</strong><small>Choose your preferred spacing</small></span><select value={layout} onChange={e=>setLayout(e.target.value)}><option>Comfortable</option><option>Compact</option><option>Spacious</option></select></label></div><div className="panel settings-panel"><span className="section-kicker">PREFERENCES</span><h2>Stay in control.</h2><label className="setting-row"><span><strong>Release notifications</strong><small>Show update notices in your workspace</small></span><input type="checkbox" checked={notifications} onChange={e=>setNotifications(e.target.checked)} /></label><div className="settings-callout"><Icon name="shield" /><div><strong>Account security</strong><p>Session revocation and password changes require your authentication provider to be connected.</p></div></div><button className="button button-ghost full-button" onClick={()=>setPage("Profile")}>Profile & sessions <Icon name="arrow" /></button></div></section>}
+        {active==="Key history"&&<section className="panel"><div className="panel-heading"><div><span className="section-kicker">ACCESS EVENTS</span><h2>Key history</h2></div><button className="button button-ghost button-small" onClick={()=>{setPage("Admin panel");setAdminTab("Key system");}}>Manage keys</button></div><p className="muted">For privacy, individual key values are never stored in plain text. Administrators can view key prefixes, expiry, usage, and revocation state.</p>{notice&&<p className="inline-notice">{notice}</p>}</section>}
 
-        {active === "Notifications" && <section className="panel notifications-panel"><div className="panel-heading"><div><span className="section-kicker">ACTIVITY FEED</span><h2>Latest updates</h2></div><button className="text-button" onClick={()=>setNotifications(!notifications)}>{notifications?"Mute notices":"Enable notices"}</button></div>{notifications?<><div className="notice-row"><span className="notice-icon"><Icon name="scripts" /></span><div><strong>VOID workspace refreshed</strong><p>The new dark dashboard layout is ready to explore.</p><small>Just now · Workspace</small></div><span className="notice-unread" /></div><div className="notice-row"><span className="notice-icon"><Icon name="roadmap" /></span><div><strong>Roadmap is available</strong><p>Review loader game support and adjust progress in the roadmap tab.</p><small>Today · Releases</small></div><span className="notice-unread" /></div><div className="notice-row"><span className="notice-icon"><Icon name="settings" /></span><div><strong>Personalization options</strong><p>Choose a theme, accent color, and motion preferences.</p><small>Today · Settings</small></div></div></>:<div className="empty-state">Notifications are muted in this preview.</div>}</section>}
+        {active==="Roadmap"&&<section className="panel roadmap-page"><div className="panel-heading"><div><span className="section-kicker">PUBLIC ROADMAP</span><h2>Loader games and progress</h2><p className="muted">Items below are read from the existing roadmap table.</p></div></div>{roadmap.length?roadmap.map((item,i)=><div className="roadmap-item" key={item.id}><div className="roadmap-item-top"><div><span className="roadmap-number">{String(i+1).padStart(2,"0")}</span><strong>{item.title}</strong></div><span className="roadmap-status">{item.status}</span></div><p className="muted">{item.game_name} {item.notes?"· "+item.notes:""}</p><div className="roadmap-edit"><div className="progress-track"><div style={{width:item.progress+"%"}}/></div><strong>{item.progress}%</strong></div></div>):<div className="empty-state">No public roadmap items have been added yet. Add milestones in Admin panel → Roadmap.</div>}</section>}
 
-        {active === "Profile" && <section className="panel profile-panel"><div className="profile-large"><span className="avatar avatar-large">{profileName.slice(0,1).toUpperCase()}</span><div><span className="section-kicker">YOUR ACCOUNT</span><h2>{profileName}</h2><p className="muted">{signedIn?email:"Guest preview · No account provider connected"}</p></div></div><label className="form-label">DISPLAY NAME<input value={profileName} onChange={e=>setProfileName(e.target.value)} /></label><label className="form-label">EMAIL ADDRESS<input value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" /></label><div className="session-card"><Icon name="shield" /><div><strong>Current browser session</strong><p>{signedIn?"Signed-in state is local preview only.":"Guest preview session. No server session exists."}</p></div><span className="status status-live"><i /> Current</span></div><div className="profile-actions"><button className="button button-light" onClick={()=>setEditorNotice("Profile changes are only stored in this page preview.")}>Save profile</button>{signedIn&&<button className="button button-ghost" onClick={()=>{setSignedIn(false);setPage("Home");}}>Sign out</button>}</div></section>}
+        {active==="Analytics"&&<section className="panel"><div className="panel-heading"><div><span className="section-kicker">30-DAY REPORT</span><h2>Real website analytics</h2></div><button className="button button-light button-small" onClick={()=>void loadAnalytics()}>Refresh analytics</button></div>{!isAdmin?<div className="empty-state">Administrator role required to view site-wide analytics. Only consented page events are recorded.</div>:analytics?<><div className="stats-grid"><div className="stat-card"><span className="section-kicker">RECORDED EVENTS</span><strong>{analytics.events}</strong><small>Last 30 days</small></div><div className="stat-card"><span className="section-kicker">UNIQUE VISITORS</span><strong>{analytics.uniqueVisitors}</strong><small>Distinct consented sessions</small></div><div className="stat-card"><span className="section-kicker">TODAY PAGE VIEWS</span><strong>{analytics.todayViews}</strong><small>UTC day</small></div><div className="stat-card"><span className="section-kicker">TODAY VISITORS</span><strong>{analytics.todayVisitors}</strong><small>Distinct sessions today</small></div></div><div className="security-list">{Object.entries(analytics.byEvent).map(([name,count])=><p key={name}>{name}<b>{count}</b></p>)}</div>{analytics.limited&&<p className="muted">The report reached the 10,000-event query cap; totals may be undercounted.</p>}</>:<div className="empty-state">{analyticsError||"Load analytics to see recorded data."}<button className="text-button" onClick={()=>void loadAnalytics()}>Load analytics</button></div>}</section>}
 
-        {(active === "Sign in" || active === "Sign up") && <section className="auth-wrap"><div className="auth-aside"><img src={logo} alt="VOID" /><span className="section-kicker">WELCOME TO VOID</span><h2>Your workspace.<br/>Your next move.</h2><p>A quieter space to manage releases, keep your scripts organized, and make the tools yours.</p><div className="auth-trust"><Icon name="shield" /> Thoughtful design. Creator-first workflow.</div></div><form className="panel auth-card" onSubmit={e=>{e.preventDefault();if(email.trim()&&password.length>=6){setSignedIn(true);setProfileName(email.split("@")[0]||"Void Member");setPage("Home");}else{setEditorNotice("Enter an email and a password with at least 6 characters.");}}}><span className="section-kicker">{authMode==="login"?"GOOD TO HAVE YOU BACK":"START YOUR WORKSPACE"}</span><h2>{authMode==="login"?"Sign in":"Create your account"}</h2><p className="muted">{authMode==="login"?"Enter your details to continue.":"A fresh start for your script workflow."}</p><label className="form-label">EMAIL ADDRESS<input type="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" /></label><label className="form-label">PASSWORD<div className="password-input"><input type={showPassword?"text":"password"} value={password} required minLength={6} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters" /><button type="button" onClick={()=>setShowPassword(v=>!v)}>{showPassword?"Hide":"Show"}</button></div></label><button className="button button-light auth-submit" type="submit">{authMode==="login"?"Continue":"Create account"} <Icon name="arrow" /></button>{editorNotice&&<p className="inline-notice">{editorNotice}</p>}<p className="auth-switch">{authMode==="login"?"New to VOID?":"Already have an account?"} <button type="button" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setEditorNotice("");}}>{authMode==="login"?"Create an account":"Sign in"}</button></p><p className="auth-disclaimer">Interface preview only. Connect your existing authentication provider before using real accounts.</p></form></section>}
+        {active==="API & endpoints"&&<section className="settings-grid"><div className="panel settings-panel"><span className="section-kicker">ENDPOINT HEALTH</span><h2>Script API</h2><div className="endpoint-pill"><i className={endpointStatus.startsWith("Online")?"":"endpoint-down"}/>{endpointStatus}</div><p className="muted">Health endpoint: {scriptApiUrl}?action=health</p><button className="button button-light" onClick={()=>fetch(scriptApiUrl+"?action=health",{headers:{apikey:supabasePublicKey}}).then(async r=>{const d=await r.json();setEndpointStatus(r.ok&&d.ok?"Online · API v"+d.version:"Unhealthy · "+(d.error||r.status));}).catch(()=>setEndpointStatus("Offline · could not reach API"))}>Verify endpoint</button><div className="security-list"><p>Key validation <b>POST action: validate</b></p><p>Protected source loader <b>GET action: load</b></p><p>Admin actions <b>JWT + admin role</b></p><p>Analytics <b>Cookie opt-in required</b></p></div></div><div className="panel settings-panel"><span className="section-kicker">COPYABLE SAMPLE</span><h2>Endpoint request sample</h2><textarea className="loader-output api-sample" value={apiSample} onChange={e=>setApiSample(e.target.value)}/><button className="button button-ghost" onClick={()=>void navigator.clipboard.writeText(apiSample).then(()=>setNotice("API sample copied."),()=>setNotice("Select and copy the sample manually."))}>Copy sample</button>{notice&&<p className="inline-notice">{notice}</p>}</div></section>}
 
-        {active === "Admin" && <section className="admin-layout"><aside className="admin-sidebar panel"><div className="admin-brand"><span className="admin-mark"><Icon name="admin" /></span><div><strong>VOID CONTROL</strong><small>ADMINISTRATION</small></div></div><span className="section-kicker">MANAGEMENT</span><button className="admin-side-active"><Icon name="home" /> Overview</button><button onClick={()=>setPage("Scripts")}><Icon name="scripts" /> Script library</button><button onClick={()=>setPage("Roadmap")}><Icon name="roadmap" /> Script roadmap</button><button onClick={()=>setPage("Key system")}><Icon name="keys" /> Key system</button><button onClick={()=>setPage("Settings")}><Icon name="settings" /> Appearance</button><div className="admin-warning"><Icon name="shield" /><p>Preview controls only. Protect admin actions with server-side role checks.</p></div></aside><div className="admin-content"><div className="admin-overview-grid"><div className="stat-card"><span className="section-kicker">TOTAL SCRIPTS</span><strong>{scripts.length}</strong><small>Library entries</small></div><div className="stat-card"><span className="section-kicker">SAVED ITEMS</span><strong>{saved.length}</strong><small>In this browser view</small></div><div className="stat-card"><span className="section-kicker">ROADMAP ITEMS</span><strong>{roadmap.length}</strong><small>Milestones</small></div></div><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">CONTENT CONTROL</span><h2>Script management</h2></div><button className="button button-light button-small" onClick={()=>{const id=Math.max(0,...scripts.map(s=>s.id))+1;setScripts(old=>[...old,{id,name:"New script "+id,game:"Unassigned",status:"Coming soon",updated:"Just now",description:"New draft. Update details in your release workflow."}]);}}>Add script +</button></div>{scripts.map(script=><div className="admin-script-row" key={script.id}><span className="script-symbol">{"</>"}</span><div className="admin-script-name"><strong>{script.name}</strong><small>{script.game}</small></div><select value={script.status} onChange={e=>setScripts(old=>old.map(s=>s.id===script.id?{...s,status:e.target.value}:s))}><option>Live</option><option>Updating</option><option>Coming soon</option></select><button className="icon-button" aria-label="Edit script in editor" onClick={()=>openEditor(script)}><Icon name="editor" /></button></div>)}</div><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">DELIVERY TRACKER</span><h2>Roadmap progress</h2></div><button className="text-button" onClick={()=>setPage("Roadmap")}>Edit roadmap <Icon name="arrow" /></button></div>{roadmap.map(item=><div className="roadmap-row" key={item.game}><div className="roadmap-label"><strong>{item.game}</strong><span>{item.progress}% · {item.status}</span></div><div className="progress-track"><div style={{width:item.progress+"%"}} /></div></div>)}</div><div className="panel admin-table-panel"><span className="section-kicker">SECURITY CHECKLIST</span><h2>Backend integrations</h2><div className="security-list"><p><span className="security-dot pending" /> Authentication provider <b>Needs connection</b></p><p><span className="security-dot pending" /> Key validation endpoint <b>Needs connection</b></p><p><span className="security-dot pending" /> Protected admin roles <b>Needs connection</b></p><p><span className="security-dot pending" /> Persistent roadmap storage <b>Needs connection</b></p></div></div></div></section>}
+        {active==="Profile"&&<section className="panel profile-panel"><div className="profile-large">{avatarUrl?<img className="avatar avatar-large avatar-image" src={avatarUrl} alt="Profile avatar"/>:<span className="avatar avatar-large">{(profileName||"V").slice(0,1).toUpperCase()}</span>}<div><span className="section-kicker">YOUR ACCOUNT</span><h2>{profileName||"Void member"}</h2><p className="muted">{userEmail||"Sign in to connect your profile"}</p></div></div>{user?<form onSubmit={saveProfile}><label className="form-label">DISPLAY NAME<input value={profileName} maxLength={60} onChange={e=>setProfileName(e.target.value)} placeholder="Your display name"/></label><label className="form-label">BIO<textarea rows={3} maxLength={280} value={profileBio} onChange={e=>setProfileBio(e.target.value)} placeholder="A little about you…"/></label><label className="form-label">AVATAR IMAGE URL<input type="url" value={avatarUrl} onChange={e=>setAvatarUrl(e.target.value)} placeholder="https://…"/></label><button className="button button-light" type="submit">Save profile</button></form>:<div className="empty-state">Sign in to customize and save your profile. <button className="button button-light" onClick={()=>{setAuthMode("login");setPage("Sign in");}}>Sign in</button></div>}{notice&&<p className="inline-notice">{notice}</p>}</section>}
 
-        <footer className="footer"><div className="footer-brand"><img src={logo} alt="" /><span>VOID<span className="brand-dot">.</span></span></div><span>BUILT FOR THE NEXT MOVE.</span><button onClick={()=>setPage("Settings")}>Workspace settings ↗</button></footer>
+        {active==="Sessions"&&<section className="settings-grid"><div className="panel settings-panel"><span className="section-kicker">SESSION SECURITY</span><h2>Current session</h2><div className="session-card"><Icon name="shield"/><div><strong>{user?"Authenticated Supabase session":"Guest session"}</strong><p>{userEmail||"No user is signed in."}<br/>{session?.expires_at?"Session expires "+new Date(session.expires_at*1000).toLocaleString():"No authenticated token is active."}</p></div><span className="status status-live"><i/>{user?"Active":"Guest"}</span></div><button className="button button-ghost full-button" onClick={()=>void signOut(false)} disabled={!user}>Sign out this session</button><button className="button button-ghost full-button" onClick={()=>void signOut(true)} disabled={!user}>Sign out all sessions</button>{sessionNotice&&<p className="inline-notice">{sessionNotice}</p>}</div><div className="panel settings-panel"><span className="section-kicker">PASSWORD</span><h2>Update password</h2><form onSubmit={changePassword}><label className="form-label">NEW PASSWORD<input type="password" value={newPassword} minLength={8} onChange={e=>setNewPassword(e.target.value)} placeholder="At least 8 characters" required/></label><button className="button button-light" disabled={!user}>Update password</button></form><p className="muted">Password changes are handled by Supabase Auth.</p></div></section>}
+
+        {active==="Settings"&&<section className="settings-grid"><div className="panel settings-panel"><span className="section-kicker">PREFERENCES</span><h2>Workspace settings</h2><label className="setting-row"><span><strong>Spotlight glow</strong><small>Ambient light behind the interface</small></span><input type="checkbox" checked={spotlight} onChange={e=>setSpotlight(e.target.checked)}/></label><label className="setting-row"><span><strong>Reduced motion</strong><small>Reduce animations and movement</small></span><input type="checkbox" checked={reducedMotion} onChange={e=>setReducedMotion(e.target.checked)}/></label><label className="setting-row"><span><strong>Release notifications</strong><small>Show workspace update notices</small></span><input type="checkbox" checked={notifications} onChange={e=>setNotifications(e.target.checked)}/></label><label className="setting-row"><span><strong>Dashboard density</strong><small>Choose preferred spacing</small></span><select value={layout} onChange={e=>setLayout(e.target.value)}><option>Comfortable</option><option>Compact</option><option>Spacious</option></select></label><button className="button button-light" onClick={()=>{localStorage.setItem("void-theme",themeId);localStorage.setItem("void-accent",accent);localStorage.setItem("void-motion",String(reducedMotion));localStorage.setItem("void-spotlight",String(spotlight));localStorage.setItem("void-layout",layout);setNotice("Settings saved on this device.");}}>Save preferences</button>{notice&&<p className="inline-notice">{notice}</p>}</div><div className="panel settings-panel"><span className="section-kicker">COOKIE CONTROLS</span><h2>Privacy choices</h2><p className="muted">Change your cookie preferences at any time. Analytics are only sent after opt-in.</p><button className="button button-ghost full-button" onClick={()=>{setCookieCustomize(true);setCookieNotice("");}}>Manage cookie preferences</button><button className="button button-ghost full-button" onClick={()=>setPage("Themes")}>Browse 35 themes</button></div></section>}
+
+        {active==="Notifications"&&<section className="panel notifications-panel"><div className="panel-heading"><div><span className="section-kicker">ACTIVITY FEED</span><h2>Latest updates</h2></div><button className="text-button" onClick={()=>setNotifications(!notifications)}>{notifications?"Mute notices":"Enable notices"}</button></div>{notifications?<><div className="notice-row"><span className="notice-icon"><Icon name="scripts"/></span><div><strong>VOID DEVELOPMENT workspace refreshed</strong><p>The script library is connected to the published metadata table.</p><small>Workspace · Current session</small></div><span className="notice-unread"/></div><div className="notice-row"><span className="notice-icon"><Icon name="shield"/></span><div><strong>Script protection</strong><p>Public cards show a protected notice; access is verified by the key API.</p><small>Security · Current session</small></div></div><div className="notice-row"><span className="notice-icon"><Icon name="palette"/></span><div><strong>35 themes available</strong><p>Choose an accent and save your workspace look.</p><small>Appearance · Current session</small></div></div></>:<div className="empty-state">Notifications are muted.</div>}</section>}
+
+        {active==="Activity log"&&<section className="panel"><span className="section-kicker">ACCOUNT ACTIVITY</span><h2>Recent activity</h2><div className="security-list"><p>Script library loaded<b>{scripts.length} entries</b></p><p>Authentication<b>{user?"Signed in":"Guest"}</b></p><p>API health<b>{endpointStatus}</b></p><p>Cookie analytics consent<b>{cookiePrefs?.analytics?"Enabled":"Not enabled"}</b></p></div><p className="muted">Administrative actions are recorded in the protected audit log.</p></section>}
+
+        {active==="Community"&&<section className="panel"><span className="section-kicker">CREATOR SPACE</span><h2>Community resources</h2><p className="muted">Share releases, add YouTube showcases, and keep update notes clear for users.</p><div className="quick-action-list">{[["Browse releases","Scripts"],["Release roadmap","Roadmap"],["Read changelog","Changelog"],["Get support","Help center"]].map(([label,page])=><button className="quick-action" key={label} onClick={()=>setPage(page)}><span><strong>{label}</strong></span><Icon name="arrow"/></button>)}</div></section>}
+
+        {active==="Changelog"&&<section className="panel"><span className="section-kicker">CHANGELOG</span><h2>Void Development updates</h2><div className="notice-row"><span className="notice-icon"><Icon name="check"/></span><div><strong>Connected auth and release data</strong><p>Login, registration, profile editing, published scripts, and admin-only release management use Supabase.</p><small>Current release</small></div></div><div className="notice-row"><span className="notice-icon"><Icon name="palette"/></span><div><strong>35 dark themes</strong><p>More accent palettes and custom accent color selection.</p><small>Current release</small></div></div><div className="notice-row"><span className="notice-icon"><Icon name="shield"/></span><div><strong>Key verification and script loader</strong><p>Existing key API remains the source of truth for validation.</p><small>Current release</small></div></div></section>}
+
+        {active==="Help center"&&<section className="panel"><span className="section-kicker">HELP CENTER</span><h2>Quick help</h2>{[["How do I release a script?","Sign in with an account that has the admin role, open Admin panel → Lua uploads, add the source and metadata, then publish."],["How does protection work?","Public cards do not expose the source field. A generated loader calls this site's /api/scripts/load proxy, which forwards the key to your Supabase script API."],["Why can't I see admin tools?","Admin controls require an authenticated user with the admin role in public.user_roles. A profile label alone does not grant access."],["Why does analytics need consent?","Site analytics events are recorded only after you opt into analytics cookies. Essential authentication remains separate."]].map(([q,a])=><details className="help-item" key={q}><summary>{q}</summary><p>{a}</p></details>)}</section>}
+
+        {isAuthPage&&<section className="auth-wrap"><div className="auth-aside"><img src={logo} alt="Void Development"/><span className="section-kicker">WELCOME TO VOID DEVELOPMENT</span><h2>Your workspace.<br/><span className="gradient-title">Your next move.</span></h2><p>Sign in to save your profile, manage your releases, and access the tools allowed for your account.</p><div className="auth-trust"><Icon name="shield"/> Real Supabase authentication · protected roles</div></div><form className="panel auth-card" onSubmit={handleAuth}><span className="section-kicker">{authMode==="login"?"WELCOME BACK":"CREATE YOUR ACCOUNT"}</span><h2>{authMode==="login"?"Sign in":"Create account"}</h2><p className="muted">{authMode==="login"?"Continue to your Void Development workspace.":"Create your own account to save preferences and scripts."}</p>{authMode==="signup"&&<label className="form-label">DISPLAY NAME<input value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name"/></label>}<label className="form-label">EMAIL ADDRESS<input type="email" autoComplete="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label><label className="form-label">PASSWORD<div className="password-input"><input type={showPassword?"text":"password"} autoComplete={authMode==="login"?"current-password":"new-password"} minLength={8} value={password} required onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters"/><button type="button" onClick={()=>setShowPassword(v=>!v)}>{showPassword?"Hide":"Show"}</button></div></label><button className="button button-light auth-submit" type="submit" disabled={authBusy}>{authBusy?"Please wait…":authMode==="login"?"Sign in securely":"Create account"} <Icon name="arrow"/></button><button className="button button-ghost auth-submit" type="button" disabled={authBusy} onClick={()=>void signInGoogle()}>Continue with Google</button>{authMessage&&<p className="inline-notice">{authMessage}</p>}<p className="auth-switch">{authMode==="login"?"New to Void Development?":"Already have an account?"} <button type="button" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setAuthMessage("");}}>{authMode==="login"?"Create an account":"Sign in"}</button></p><p className="auth-disclaimer">Your credentials are handled by Supabase Auth. Do not share your password with anyone.</p></form></section>}
+
+        {active==="Admin panel"&&<section className="admin-layout"><aside className="admin-sidebar panel"><div className="admin-brand"><span className="admin-mark"><Icon name="admin"/></span><div><strong>VOID CONTROL</strong><small>ADMINISTRATION</small></div></div><span className="section-kicker">MANAGEMENT</span>{adminTabs.map((tab)=><button key={tab} className={adminTab===tab?"admin-side-active":""} onClick={()=>{setAdminTab(tab);setNotice("");if(tab==="Users")void loadAdminUsers();if(tab==="Analytics")void loadAnalytics();if(tab==="Key system")void loadKeys();if(tab==="Audit logs")void loadAudit();if(tab==="Releases")void refreshScripts();}}><Icon name={tab==="Overview"?"home":tab==="Releases"?"release":tab==="Key system"?"keys":tab==="Script protector"?"shield":tab==="Lua uploads"?"upload":tab==="Users"?"users":tab==="Analytics"?"chart":tab==="Endpoint verification"?"api":tab==="Roadmap"?"roadmap":"activity"}/>{tab}</button>)}<div className="admin-warning"><Icon name="shield"/><p>Server-verified admin role required for all privileged actions.</p></div></aside><div className="admin-content">
+          {notice&&<div className="panel inline-notice">{notice}</div>}
+          {adminTab==="Overview"&&<><div className="admin-overview-grid"><div className="stat-card"><span className="section-kicker">SCRIPTS</span><strong>{scripts.length}</strong><small>Connected database</small></div><div className="stat-card"><span className="section-kicker">ADMIN ROLE</span><strong>{isAdmin?"ACTIVE":"DENIED"}</strong><small>Verified through user_roles</small></div><div className="stat-card"><span className="section-kicker">API STATUS</span><strong className="stat-live">{endpointStatus.startsWith("Online")?"ONLINE":"CHECK"}</strong><small>Live health check</small></div></div><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">ADMIN SHORTCUTS</span><h2>Control room</h2></div></div>{[["Releases","Publish scripts, banners, and YouTube showcases."],["Key system","Create, inspect, and revoke keys."],["Lua uploads","Upload source and generate site-specific loaders."],["Users","Review registered emails and manage account access."],["Analytics","View consented real traffic events."],["Endpoint verification","Check the health endpoint and copy API samples."]].map(([tab,desc])=><button className="quick-action" key={tab} onClick={()=>{setAdminTab(tab);if(tab==="Users")void loadAdminUsers();if(tab==="Analytics")void loadAnalytics();if(tab==="Key system")void loadKeys();}}><span><strong>{tab}</strong><small>{desc}</small></span><Icon name="arrow"/></button>)}</div></>}
+          {adminTab==="Releases"&&<div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">PUBLISHING</span><h2>Script releases</h2></div><button className="button button-light button-small" onClick={()=>{setEditingScriptId("");setReleaseName("");setReleaseSlug("");setReleaseDescription("");setReleaseSource("");setReleaseBanner("");setReleaseVideo("");setAdminTab("Lua uploads");}}>New release +</button></div>{scripts.map(s=><div className="admin-script-row" key={s.id}>{s.banner_url?<img className="admin-banner-thumb" src={s.banner_url} alt=""/>:<span className="script-symbol">{"</>"}</span>}<div className="admin-script-name"><strong>{s.name}</strong><small>{s.slug} · {s.status||"published"}</small></div><button className="button button-ghost button-small" onClick={()=>editRelease(s)}>Edit</button></div>)}{scripts.length===0&&<p className="muted">No script records found.</p>}</div>}
+          {adminTab==="Key system"&&<><div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">KEY CONTROL</span><h2>Create a key</h2></div><button className="button button-ghost button-small" onClick={()=>void loadKeys()}>Refresh keys</button></div><form className="release-form" onSubmit={createKey}><label className="form-label">PUBLISHED SCRIPT<select required value={keySlug} onChange={e=>setKeySlug(e.target.value)}><option value="">Choose a published script</option>{scripts.filter(s=>s.status==="published").map(s=><option key={s.id} value={s.slug}>{s.name}</option>)}</select></label><button className="button button-light">Create 30-day key</button></form>{newKey&&<div className="created-key"><strong>Copy this key now. It will not be shown again in full.</strong><code>{newKey}</code><button className="button button-ghost button-small" onClick={()=>void navigator.clipboard.writeText(newKey)}>Copy key</button></div>}</div><div className="panel admin-table-panel"><h2>Issued keys</h2>{keyRecords.map((k,i)=><div className="admin-script-row" key={String(k.id||i)}><div className="admin-script-name"><strong>{String(k.key_prefix||"Key")} · {String(k.label||"Access key")}</strong><small>{String((k.scripts as Record<string,unknown>|undefined)?.name||k.script_id||"Script")} · {String(k.use_count||0)} uses · {k.expires_at?new Date(String(k.expires_at)).toLocaleDateString():"No expiry"}</small></div>{k.revoked_at?<span className="status">Revoked</span>:<button className="button button-ghost button-small" onClick={()=>void revokeKey(String(k.id))}>Revoke</button>}</div>)}{keyRecords.length===0&&<p className="muted">Press Refresh keys to load current records.</p>}</div></>}
+          {adminTab==="Script protector"&&<div className="panel admin-table-panel"><span className="section-kicker">PROTECTION WORKFLOW</span><h2>Protected loader</h2><p className="muted">Choose a saved script, then generate a loadstring that uses the current website origin. The Worker proxy must be active for the generated URL to resolve.</p><label className="form-label">SCRIPT<select value={protectorSlug} onChange={e=>setProtectorSlug(e.target.value)}><option value="">Choose script</option>{scripts.map(s=><option key={s.id} value={s.slug}>{s.name}</option>)}</select></label><button className="button button-light" onClick={()=>void prepareLoader()}>Generate website loader</button><textarea className="loader-output" value={loaderCode} readOnly placeholder="Generated loader…"/><button className="button button-ghost" disabled={!loaderCode} onClick={()=>void navigator.clipboard.writeText(loaderCode)}>Copy loader</button><div className="protected-card protected-card-large"><Icon name="shield"/><strong>THIS SCRIPT IS PROTECTED BY VOID DEVELOPMENT</strong><small>Client-executed source is not cryptographically hidden from its recipient.</small></div></div>}
+          {adminTab==="Lua uploads"&&<div className="panel admin-table-panel"><span className="section-kicker">RELEASE WORKFLOW</span><h2>Lua uploads and script publishing</h2><p className="muted">Use the full release form in Script protector, which includes source, banner, and YouTube showcase.</p><button className="button button-light" onClick={()=>setPage("Lua uploads")}>Open Lua upload form <Icon name="arrow"/></button></div>}
+          {adminTab==="Users"&&<div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">AUTH USERS</span><h2>Registered users</h2><p className="muted">Email addresses are only shown to verified admins. Results are capped at 200 users.</p></div><button className="button button-light button-small" onClick={()=>void loadAdminUsers()}>Refresh</button></div><label className="search-box"><Icon name="search"/><input value={userSearch} onChange={e=>setUserSearch(e.target.value)} placeholder="Search email…"/></label>{users.filter(u=>u.email.toLowerCase().includes(userSearch.toLowerCase())).map(u=><div className="admin-user-row" key={u.id}><div className="avatar">{(u.email||"U").slice(0,1).toUpperCase()}</div><div className="admin-script-name"><strong>{u.email||"No email"}</strong><small>Joined {new Date(u.created_at).toLocaleDateString()} · {u.last_sign_in_at?"Last sign-in "+new Date(u.last_sign_in_at).toLocaleDateString():"Never signed in"} · {u.email_confirmed_at?"Email confirmed":"Email unconfirmed"}</small></div><select value={u.roles.includes("admin")?"admin":u.roles.includes("moderator")?"moderator":"user"} onChange={e=>void updateAdminUser(u,{role:e.target.value})}><option value="user">User</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select><button className="button button-ghost button-small" onClick={()=>void updateAdminUser(u,{banned:!u.banned_until&&!u.profile?.banned})}>{u.banned_until||u.profile?.banned?"Unban":"Ban"}</button></div>)}{users.length===0&&<p className="muted">Load users to see registered accounts.</p>}</div>}
+          {adminTab==="Analytics"&&<div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">CONSENTED VISITS</span><h2>Site analytics</h2></div><button className="button button-light button-small" onClick={()=>void loadAnalytics()}>Refresh</button></div>{analytics?<div className="stats-grid"><div className="stat-card"><span className="section-kicker">EVENTS</span><strong>{analytics.events}</strong></div><div className="stat-card"><span className="section-kicker">VISITORS</span><strong>{analytics.uniqueVisitors}</strong></div><div className="stat-card"><span className="section-kicker">TODAY VIEWS</span><strong>{analytics.todayViews}</strong></div><div className="stat-card"><span className="section-kicker">TODAY VISITORS</span><strong>{analytics.todayVisitors}</strong></div></div>:<p className="muted">{analyticsError||"Load analytics to see real database-backed totals."}</p>}<button className="button button-ghost" onClick={()=>void loadAnalytics()}>Load analytics</button></div>}
+          {adminTab==="Endpoint verification"&&<div className="panel admin-table-panel"><span className="section-kicker">API HEALTH</span><h2>Endpoint verification</h2><div className="endpoint-pill"><i className={endpointStatus.startsWith("Online")?"":"endpoint-down"}/>{endpointStatus}</div><p className="muted">{scriptApiUrl}?action=health</p><button className="button button-light" onClick={()=>fetch(scriptApiUrl+"?action=health",{headers:{apikey:supabasePublicKey}}).then(async r=>{const d=await r.json();setEndpointStatus(r.ok&&d.ok?"Online · API v"+d.version:"Unhealthy");}).catch(()=>setEndpointStatus("Offline"))}>Run health check</button><textarea className="loader-output" value={apiSample} onChange={e=>setApiSample(e.target.value)}/><button className="button button-ghost" onClick={()=>void navigator.clipboard.writeText(apiSample)}>Copy endpoint sample</button></div>}
+          {adminTab==="Roadmap"&&<div className="panel admin-table-panel"><span className="section-kicker">ROADMAP</span><h2>Milestones</h2>{roadmap.map(r=><div className="roadmap-row" key={r.id}><div className="roadmap-label"><strong>{r.title}</strong><span>{r.progress}% · {r.status}</span></div><div className="progress-track"><div style={{width:r.progress+"%"}}/></div></div>)}<p className="muted">The current database has admin-only insert/update policies for roadmap items. This UI reads existing public milestones; editor controls can be added without changing existing records.</p></div>}
+          {adminTab==="Audit logs"&&<div className="panel admin-table-panel"><div className="panel-heading"><div><span className="section-kicker">AUDIT TRAIL</span><h2>Administrative actions</h2></div><button className="button button-light button-small" onClick={()=>void loadAudit()}>Refresh logs</button></div>{auditRows.map((row,i)=><div className="admin-script-row" key={String(row.id||i)}><div className="admin-script-name"><strong>{String(row.action||"Action")}</strong><small>{String(row.target_type||"target")} · {String(row.target_id||"—")} · {new Date(String(row.created_at)).toLocaleString()}</small></div></div>)}{auditRows.length===0&&<p className="muted">Load audit logs to view recorded administrator actions.</p>}</div>}
+        </div></section>}
+
+        <footer className="footer"><div className="footer-brand"><img src={logo} alt=""/><span>Void Development<span className="brand-dot">.</span></span></div><span>BUILT FOR THE NEXT MOVE.</span><button onClick={()=>setPage("Settings")}>Workspace settings ↗</button><button onClick={()=>{setCookieCustomize(true);setCookieNotice("");}}>Cookies</button></footer>
       </main>
+
+      {cookiePrefs===null&&<div className="cookie-backdrop"><section className="cookie-card" role="dialog" aria-modal="true" aria-labelledby="cookie-title"><div className="cookie-brand"><span className="cookie-icon"><Icon name="shield"/></span><span className="section-kicker">YOUR PRIVACY MATTERS</span></div><h2 id="cookie-title">Your data. Your call.</h2><p>Void Development uses essential storage to keep sign-in and security features working. Optional analytics help us understand visits and improve the workspace. We only record analytics after you opt in.</p><div className="cookie-choice"><span><strong>Essential</strong><small>Authentication and security · always on</small></span><span className="cookie-required">REQUIRED</span></div>{cookieCustomize&&<><label className="setting-row"><span><strong>Analytics cookies</strong><small>Allow anonymous visit counts and page events</small></span><input type="checkbox" checked={cookieAnalytics} onChange={e=>setCookieAnalytics(e.target.checked)}/></label><label className="setting-row"><span><strong>Personalization</strong><small>Remember theme and workspace preferences</small></span><input type="checkbox" checked={cookiePersonalization} onChange={e=>setCookiePersonalization(e.target.checked)}/></label></>}<button className="button button-light cookie-main" onClick={()=>chooseCookies(true,true)}>Accept all cookies <Icon name="arrow"/></button><div className="cookie-actions"><button className="button button-ghost" onClick={()=>chooseCookies(false,true)}>Essential only</button><button className="text-button" onClick={()=>cookieCustomize?chooseCookies(cookieAnalytics,cookiePersonalization):(setCookieCustomize(true),setCookieNotice(""))}>{cookieCustomize?"Save choices":"Customize"}</button></div><small className="cookie-footnote">You can change your choices anytime in Settings → Privacy choices.</small></section></div>}
+      {cookiePrefs!==null&&cookieCustomize&&<div className="cookie-backdrop"><section className="cookie-card cookie-card-compact" role="dialog" aria-modal="true"><button className="cookie-close icon-button" onClick={()=>setCookieCustomize(false)} aria-label="Close cookie settings"><Icon name="close"/></button><span className="section-kicker">COOKIE PREFERENCES</span><h2>Privacy settings</h2><div className="cookie-choice"><span><strong>Essential</strong><small>Authentication and security</small></span><span className="cookie-required">REQUIRED</span></div><label className="setting-row"><span><strong>Analytics</strong><small>Anonymous page views and visits</small></span><input type="checkbox" checked={cookieAnalytics} onChange={e=>setCookieAnalytics(e.target.checked)}/></label><label className="setting-row"><span><strong>Personalization</strong><small>Remember theme choices</small></span><input type="checkbox" checked={cookiePersonalization} onChange={e=>setCookiePersonalization(e.target.checked)}/></label><button className="button button-light cookie-main" onClick={()=>chooseCookies(cookieAnalytics,cookiePersonalization)}>Save preferences</button>{cookieNotice&&<p className="inline-notice">{cookieNotice}</p>}</section></div>}
     </div>
   );
 }
