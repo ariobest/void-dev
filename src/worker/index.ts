@@ -81,17 +81,33 @@ app.get("/api/scripts/load", async (c) => {
     });
   }
 
-  if (!/^[a-z0-9-]{1,80}$/.test(slug) || (key && !/^(VOID|ARIO)-[A-Z0-9]{2}-[A-Z0-9]{3}-[A-Z0-9]{4}$/.test(key))) {
-    return c.json({ protected: true, error: "Invalid script slug or key.", code: "INVALID_REQUEST" }, 400, {
+  if (!/^[a-z0-9-]{1,80}$/.test(slug)) {
+    return c.json({ protected: true, error: "Invalid script slug.", code: "INVALID_REQUEST" }, 400, {
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
     });
   }
+
+  // Protected releases must never fall back to public loading. A missing key is denied.
+  if (!key) {
+    return c.json({ protected: true, error: "Access key required. Get access through Void Development.", code: "KEY_REQUIRED" }, 401, {
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "X-Content-Type-Options": "nosniff",
+    });
+  }
+
+  if (!/^(VOID|ARIO)-[A-Z0-9]{2}-[A-Z0-9]{3}-[A-Z0-9]{4}$/.test(key)) {
+    return c.json({ protected: true, error: "Invalid access key format.", code: "INVALID_KEY_FORMAT" }, 400, {
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    });
+  }
+
   try {
     const upstreamUrl = new URL(SUPABASE_URL + "/functions/v1/script-api");
-    upstreamUrl.searchParams.set("action", key ? "load" : "load-public");
+    upstreamUrl.searchParams.set("action", "load");
     upstreamUrl.searchParams.set("script", slug);
-    if (key) upstreamUrl.searchParams.set("key", key);
+    upstreamUrl.searchParams.set("key", key);
     const upstream = await fetch(upstreamUrl.toString(), {
       method: "GET",
       headers: { "Accept": "text/plain, application/json" },
