@@ -8,17 +8,17 @@ app.get("/api/", (c) => c.json({ name: "Void Development API", ok: true }));
 app.get("/api/scripts/load", async (c) => {
   const slug = (c.req.query("script") || "").trim();
   const key = (c.req.query("key") || "").trim();
-  if (!/^[a-z0-9-]{1,80}$/.test(slug) || !/^(VOID|ARIO)-[A-Z0-9]{2}-[A-Z0-9]{3}-[A-Z0-9]{4}$/.test(key)) {
-    return c.json({ protected: true, error: "THIS SCRIPT IS PROTECTED BY VOID DEVELOPMENT", code: "KEY_REQUIRED" }, 401, {
+  if (!/^[a-z0-9-]{1,80}$/.test(slug) || (key && !/^(VOID|ARIO)-[A-Z0-9]{2}-[A-Z0-9]{3}-[A-Z0-9]{4}$/.test(key))) {
+    return c.json({ protected: true, error: "Invalid script slug or key.", code: "INVALID_REQUEST" }, 400, {
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
     });
   }
   try {
     const upstreamUrl = new URL(SUPABASE_URL + "/functions/v1/script-api");
-    upstreamUrl.searchParams.set("action", "load");
+    upstreamUrl.searchParams.set("action", key ? "load" : "load-public");
     upstreamUrl.searchParams.set("script", slug);
-    upstreamUrl.searchParams.set("key", key);
+    if (key) upstreamUrl.searchParams.set("key", key);
     const upstream = await fetch(upstreamUrl.toString(), {
       method: "GET",
       headers: { "Accept": "text/plain, application/json" },
