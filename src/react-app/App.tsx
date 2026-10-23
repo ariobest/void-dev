@@ -251,7 +251,7 @@ function App() {
   async function handleAuth(e:FormEvent<HTMLFormElement>) {
     e.preventDefault(); setAuthBusy(true); setAuthMessage("");
     try {
-      if(authMode==="login"&&otpPending) {
+      if(otpPending) {
         if(otpCode.length!==6||!/^[0-9]{6}$/.test(otpCode)){setAuthMessage("Enter the complete 6-digit code from your email.");return;}
         const {data,error}=await supabase.auth.verifyOtp({email:email.trim(),token:otpCode,type:otpType});
         if(error)throw error;
