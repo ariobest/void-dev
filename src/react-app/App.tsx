@@ -455,9 +455,10 @@ function App() {
   async function prepareLoader(script?:ScriptRecord) {
     const slug=script?.slug||protectorSlug;
     if(!slug) {setNotice("Protect a script first, or enter its saved slug.");return;}
-    const url=window.location.origin+"/api/scripts/load?script="+encodeURIComponent(slug);
-    const loader="-- Protected by Void Development\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()";
-    setLoaderCode(loader);setProtectorSlug(slug);setNotice("Keyless loader generated. Anyone with this URL can run the script.");
+    // Protected drafts use their private, random-suffix slug and never switch to the public release endpoint.
+    const url=window.location.origin+"/protected-load/"+encodeURIComponent(slug);
+    const loader="-- Protected by Void Development\\nloadstring(game:HttpGet("+JSON.stringify(url)+"))()";
+    setLoaderCode(loader);setProtectorSlug(slug);setNotice("Private draft loader generated. The script remains unpublished; keep this URL private.");
   }
 
   async function loadAdminUsers() {
