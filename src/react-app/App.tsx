@@ -82,6 +82,7 @@ function App() {
   const [themeId,setThemeId] = useState(() => { try { return localStorage.getItem("void-theme") || "spotlight"; } catch { return "spotlight"; } });
   const [accent,setAccent] = useState(() => { try { return localStorage.getItem("void-accent") || "#f5f5f5"; } catch { return "#f5f5f5"; } });
   const isDedicatedProtector = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/protected";
+  const isBrowserProtectionUrl = typeof window !== "undefined" && /^\/(?:protected-load|load)\/[^/]+\/?$/.test(window.location.pathname);
   const [active,setActive] = useState(() => isDedicatedProtector ? "Admin panel" : "Home");
   const [adminTab,setAdminTab] = useState(() => isDedicatedProtector ? "Script protector" : "Overview");
   const [navOpen,setNavOpen] = useState(false);
@@ -527,6 +528,16 @@ function App() {
 
   const isAuthPage=active==="Sign in"||active==="Sign up";
   const pageTitle:Record<string,string>={"Scripts":"Explore the script library.","Saved scripts":"Your saved collection.","Releases":"Latest releases.","Script editor":"Your code workspace.","Themes":"Your look, your rules.","Script protector":"Publish without exposing source on public pages.","Lua uploads":"Release management.","Key system":"Access verification.","Key history":"Key activity.","Roadmap":"What we’re building.","Notifications":"Updates from Void Development.","Analytics":"Real traffic, not demo numbers.","API & endpoints":"Verify the services powering your workspace.","Activity log":"Your recent workspace activity.","Community":"The creator space.","Changelog":"Product updates.","Help center":"Guides and support.","Profile":"Make your profile yours.","Sessions":"Account security.","Settings":"Workspace preferences.","Admin panel":"Manage users, releases, keys, and protection."};
+
+  if (isBrowserProtectionUrl) return (
+    <div style={{minHeight:"100vh",display:"grid",placeItems:"center",padding:"24px",boxSizing:"border-box",background:"radial-gradient(ellipse 48% 42% at 50% 40%,rgba(255,255,255,.13),transparent 75%),#050505",color:"#f7f7f7",fontFamily:'Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif'}}>
+      <style>{`@keyframes void-protected-rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.void-protected-card{animation:none!important}}`}</style>
+      <main className="void-protected-card" style={{width:"min(620px,100%)",padding:"clamp(36px,7vw,72px) 24px",textAlign:"center",border:"1px solid rgba(255,255,255,.15)",borderRadius:"28px",background:"linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.012))",boxShadow:"0 30px 100px #000b,0 0 65px #ffffff0c,inset 0 1px #ffffff12",backdropFilter:"blur(18px)",animation:"void-protected-rise .35s ease-out both"}}>
+        <img src={logo} alt="Void Development logo" style={{display:"block",width:"100px",height:"100px",objectFit:"contain",margin:"0 auto 30px",filter:"drop-shadow(0 0 18px #ffffff26)"}}/>
+        <h1 style={{margin:0,fontSize:"clamp(27px,5vw,46px)",lineHeight:1.12,letterSpacing:"-.05em",fontWeight:850}}>THIS SCRIPT IS PROTECTED<span style={{display:"block",marginTop:"9px",color:"#fff"}}>USING VOID DEVELOPMENT</span></h1>
+      </main>
+    </div>
+  );
 
   return (
     <div className={"app theme-"+themeId+(reducedMotion?" reduce-motion":"")+(spotlight?" spotlight-on":"")+(isDedicatedProtector?" dedicated-protector":"")+(dedicatedAuthorized?" dedicated-authorized":"")} style={themeStyle}>
