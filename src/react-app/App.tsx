@@ -41,7 +41,7 @@ function App() {
   const [search, setSearch] = useState("");
   const [scripts, setScripts] = useState(initialScripts);
   const [saved, setSaved] = useState<number[]>([1]);
-  const [roadmap, setRoadmap] = useState(initialRoadmap);
+  const [roadmap, setRoadmap] = useState<Roadmap[]>(initialRoadmap);
   const [editorCode, setEditorCode] = useState("-- VOID SCRIPT EDITOR\n-- Paste your Lua code here.\n\nlocal Players = game:GetService(\"Players\")\nlocal LocalPlayer = Players.LocalPlayer\n\nprint(\"Welcome to VOID\")");
   const [editorName, setEditorName] = useState("Untitled.lua");
   const [editorNotice, setEditorNotice] = useState("");
