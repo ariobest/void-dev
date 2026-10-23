@@ -16,7 +16,7 @@
   },
   "routes": [
     {
-      "pattern": "arioscripts.cyou/api/scripts/*",
+      "pattern": "arioscripts.cyou/*",
       "zone_name": "arioscripts.cyou"
     }
   ]
