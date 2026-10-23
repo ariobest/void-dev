@@ -534,7 +534,15 @@ function App() {
       <style>{`@keyframes void-protected-rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.void-protected-card{animation:none!important}}`}</style>
       <main className="void-protected-card" style={{width:"min(620px,100%)",padding:"clamp(36px,7vw,72px) 24px",textAlign:"center",border:"1px solid rgba(255,255,255,.15)",borderRadius:"28px",background:"linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.012))",boxShadow:"0 30px 100px #000b,0 0 65px #ffffff0c,inset 0 1px #ffffff12",backdropFilter:"blur(18px)",animation:"void-protected-rise .35s ease-out both"}}>
         <img src={logo} alt="Void Development logo" style={{display:"block",width:"100px",height:"100px",objectFit:"contain",margin:"0 auto 30px",filter:"drop-shadow(0 0 18px #ffffff26)"}}/>
+        <div style={{display:"inline-flex",alignItems:"center",gap:"8px",marginBottom:"22px",padding:"8px 12px",border:"1px solid #ffffff24",borderRadius:"999px",background:"#ffffff08",color:"#e5e5e5",fontSize:"11px",fontWeight:750,letterSpacing:".16em",textTransform:"uppercase"}}><span style={{width:"7px",height:"7px",borderRadius:"50%",background:"#fff",boxShadow:"0 0 12px #fff",display:"inline-block"}}/> Protected access</div>
         <h1 style={{margin:0,fontSize:"clamp(27px,5vw,46px)",lineHeight:1.12,letterSpacing:"-.05em",fontWeight:850}}>THIS SCRIPT IS PROTECTED<span style={{display:"block",marginTop:"9px",color:"#fff"}}>USING VOID DEVELOPMENT</span></h1>
+        <p style={{maxWidth:"450px",margin:"22px auto 0",color:"#b7b7b7",fontSize:"15px",lineHeight:1.8}}>This script is delivered through Void Development's protected loader. Its source is not displayed on this browser page.</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"10px",maxWidth:"470px",margin:"28px auto 0",textAlign:"left"}}>
+          <div style={{padding:"15px",border:"1px solid #ffffff14",borderRadius:"16px",background:"#ffffff05"}}><div style={{fontSize:"11px",letterSpacing:".12em",textTransform:"uppercase",color:"#888",marginBottom:"7px"}}>Delivery</div><div style={{fontSize:"14px",fontWeight:700}}>Protected loader</div></div>
+          <div style={{padding:"15px",border:"1px solid #ffffff14",borderRadius:"16px",background:"#ffffff05"}}><div style={{fontSize:"11px",letterSpacing:".12em",textTransform:"uppercase",color:"#888",marginBottom:"7px"}}>Access</div><div style={{fontSize:"14px",fontWeight:700}}>Authorized clients only</div></div>
+        </div>
+        <p style={{margin:"24px 0 0",fontSize:"12px",lineHeight:1.7,color:"#777"}}>If you expected a script loader, open this URL through the supported in-game loader instead of a regular browser. Never share private loader URLs publicly.</p>
+        <div style={{marginTop:"25px",paddingTop:"17px",borderTop:"1px solid #ffffff12",fontSize:"10px",letterSpacing:".2em",fontWeight:700,color:"#666"}}>VOID DEVELOPMENT <span style={{color:"#aaa"}}>·</span> SCRIPT PROTECTION</div>
       </main>
     </div>
   );
