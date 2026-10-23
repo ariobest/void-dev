@@ -69,11 +69,46 @@ app.get("/__void_protected_7f3d9a2c", () => new Response(browserProtectionPage, 
 
 // Short, loadstring-friendly endpoint: /load/<script-slug>?key=VOID-XX-XXX-XXXX
 // Keep the existing API URL working for older releases.
-app.get("/load/:slug", (c) => {
-  const target = new URL(c.req.url);
-  target.pathname = "/api/scripts/load";
-  target.searchParams.set("script", c.req.param("slug"));
-  return app.fetch(new Request(target.toString(), { method: "GET", headers: c.req.raw.headers }), c.env);
+// URL-only loader route: /load/<script-slug>
+// Browser navigation gets the protection page; script clients request the published source.
+app.get("/load/:slug", async (c) => {
+  const slug = (c.req.param("slug") || "").trim();
+  const accept = (c.req.header("Accept") || "").toLowerCase();
+  const fetchMode = (c.req.header("Sec-Fetch-Mode") || "").toLowerCase();
+  const fetchDest = (c.req.header("Sec-Fetch-Dest") || "").toLowerCase();
+  const browserNavigation = accept.includes("text/html") ||
+    (fetchMode === "navigate" && (fetchDest === "document" || fetchDest === "iframe"));
+
+  if (browserNavigation) return new Response(browserProtectionPage, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "X-Content-Type-Options": "nosniff",
+      "X-Robots-Tag": "noindex, nofollow, noarchive",
+      "Vary": "Accept",
+    },
+  });
+
+  if (!/^[a-z0-9-]{1,80}$/.test(slug)) return c.json({ error: "Invalid script slug.", code: "INVALID_REQUEST" }, 400);
+  try {
+    const upstreamUrl = new URL(SUPABASE_URL + "/functions/v1/script-api");
+    upstreamUrl.searchParams.set("action", "load-public");
+    upstreamUrl.searchParams.set("script", slug);
+    const upstream = await fetch(upstreamUrl.toString(), { headers: { "Accept": "text/plain, application/json" } });
+    return new Response(await upstream.text(), {
+      status: upstream.status,
+      headers: {
+        "Content-Type": upstream.headers.get("Content-Type") || (upstream.ok ? "text/plain; charset=utf-8" : "application/json; charset=utf-8"),
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+        "Vary": "Accept",
+      },
+    });
+  } catch {
+    return c.json({ error: "Void Development script service is temporarily unavailable.", code: "UPSTREAM_UNAVAILABLE" }, 502);
+  }
 });
 
 app.get("/api/scripts/load", async (c) => {
