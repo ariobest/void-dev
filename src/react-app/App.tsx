@@ -100,7 +100,6 @@ function App() {
   const [keyValue,setKeyValue] = useState("");
   const [keySlug,setKeySlug] = useState("");
   const [keyResult,setKeyResult] = useState("");
-  const [newKey,setNewKey] = useState("");
   const [keyRecords,setKeyRecords] = useState<Array<Record<string,unknown>>>([]);
   const [generationSlug,setGenerationSlug] = useState("");
   const [keyCountdown,setKeyCountdown] = useState(0);
