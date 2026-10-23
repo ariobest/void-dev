@@ -127,3 +127,43 @@
 @keyframes script-detail-fade{from{opacity:0}to{opacity:1}}
 @media(max-width:760px){.script-detail-backdrop{padding:8px}.script-detail-modal{max-height:94vh;border-radius:19px}.script-detail-hero{min-height:235px}.script-detail-columns{grid-template-columns:1fr}.script-detail-sidebar{order:-1}.script-detail-access-icon{margin-bottom:12px}.script-detail-sidebar>p{margin:8px 0 14px}.script-detail-security{margin-top:12px}.script-detail-meta{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:16px}.code-protected-overlay{align-items:flex-start}.code-protected-overlay small{max-width:140px}}
 @media(prefers-reduced-motion:reduce){.script-detail-backdrop{animation:none}.script-detail-showcase{transition:none}}
+
+
+/* Dedicated administrator-only Script Protector workspace */
+.dedicated-protector{min-height:100vh}
+.dedicated-protector .main-shell-dedicated{width:min(1760px,100%);max-width:none;margin:0 auto;padding:clamp(16px,2.8vw,42px);min-height:100vh}
+.dedicated-protector.dedicated-authorized .admin-layout{grid-template-columns:250px minmax(0,1fr);gap:22px;align-items:start;width:100%}
+.dedicated-protector.dedicated-authorized .admin-sidebar{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow:auto}
+.dedicated-protector.dedicated-authorized .admin-content{min-width:0;width:100%}
+.dedicated-protector.dedicated-authorized .protector-grid{grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:22px}
+.dedicated-protector.dedicated-authorized .settings-panel{min-width:0;padding:clamp(18px,2.2vw,34px)}
+.dedicated-protector.dedicated-authorized .source-textarea{min-height:clamp(260px,38vh,520px);resize:vertical}
+.dedicated-protector.dedicated-authorized .loader-output{min-height:170px}
+.dedicated-protector.dedicated-authorized .recent-protects-dropdown{margin-top:22px}
+.dedicated-access-wall{width:min(620px,100%);margin:clamp(48px,12vh,130px) auto;padding:clamp(28px,6vw,64px);text-align:center}
+.dedicated-access-wall>img{width:84px;height:84px;object-fit:contain;margin:0 auto 25px;display:block}
+.dedicated-access-wall h1{font-size:clamp(28px,5vw,44px);line-height:1.08;letter-spacing:-.04em;margin:15px 0}
+.dedicated-access-wall p{max-width:440px;margin:0 auto 25px;color:rgba(255,255,255,.62);line-height:1.8}
+.dedicated-protector:not(.dedicated-authorized) .main-shell-dedicated>:not(.dedicated-access-wall):not(.auth-wrap){display:none!important}
+.dedicated-protector:not(.dedicated-authorized) .main-shell-dedicated>.auth-wrap{width:min(1080px,100%);margin:0 auto}
+.dedicated-protector:not(.dedicated-authorized) .topbar,.dedicated-protector .ambient{display:none!important}
+.dedicated-protector .main-shell-dedicated .admin-layout{margin:0}
+@media(max-width:1050px){
+ .dedicated-protector.dedicated-authorized .admin-layout{grid-template-columns:1fr}
+ .dedicated-protector.dedicated-authorized .admin-sidebar{position:relative;top:auto;max-height:none;display:flex;flex-direction:row;align-items:center;gap:8px;overflow-x:auto;white-space:nowrap;padding:12px}
+ .dedicated-protector.dedicated-authorized .admin-brand{flex-shrink:0;margin-right:10px}
+ .dedicated-protector.dedicated-authorized .admin-sidebar>.section-kicker,.dedicated-protector.dedicated-authorized .admin-warning{display:none}
+ .dedicated-protector.dedicated-authorized .admin-sidebar>button{flex-shrink:0}
+}
+@media(max-width:760px){
+ .dedicated-protector .main-shell-dedicated{padding:12px}
+ .dedicated-protector.dedicated-authorized .admin-layout{gap:12px}
+ .dedicated-protector.dedicated-authorized .admin-sidebar{border-radius:15px}
+ .dedicated-protector.dedicated-authorized .protector-grid{grid-template-columns:minmax(0,1fr);gap:14px}
+ .dedicated-protector.dedicated-authorized .settings-panel{padding:18px}
+ .dedicated-protector.dedicated-authorized .source-textarea{min-height:260px}
+ .dedicated-protector.dedicated-authorized .release-form .button{width:100%;justify-content:center}
+ .dedicated-protector.dedicated-authorized .recent-protects-dropdown{margin-top:14px}
+ .dedicated-protector:not(.dedicated-authorized) .main-shell-dedicated>.auth-wrap{padding:0}
+ .dedicated-access-wall{margin:10vh auto;padding:28px 20px}
+}
