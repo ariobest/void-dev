@@ -258,7 +258,7 @@ function App() {
 
   async function signInGoogle() {
     setAuthBusy(true); setAuthMessage("");
-    const {error} = await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
+    const {error} = await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin+window.location.pathname}});
     if (error) { setAuthMessage(error.message); setAuthBusy(false); }
   }
 
@@ -551,7 +551,7 @@ function App() {
 
           {notice&&<div className="panel inline-notice">{notice}</div>}
 
-        <footer className="footer"><div className="footer-brand"><img src={logo} alt=""/><span>Void Development<span className="brand-dot">.</span></span></div><span>BUILT FOR THE NEXT MOVE.</span><button onClick={()=>setPage("Settings")}>Workspace settings ↗</button><button onClick={()=>{setCookieCustomize(true);setCookieNotice("");}}>Cookies</button></footer>
+        {!isDedicatedProtector&&<footer className="footer"><div className="footer-brand"><img src={logo} alt=""/><span>Void Development<span className="brand-dot">.</span></span></div><span>BUILT FOR THE NEXT MOVE.</span><button onClick={()=>setPage("Settings")}>Workspace settings ↗</button><button onClick={()=>{setCookieCustomize(true);setCookieNotice("");}}>Cookies</button></footer>}
       </main>
 
 
