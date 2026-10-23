@@ -55,7 +55,7 @@ app.get("/api/", (c) => c.json({ name: "Void Development API", ok: true }));
 
 // Dedicated, intentionally non-obvious browser protection page URL.
 // This route is handled before the SPA asset fallback, so it must not resolve to the homepage.
-app.get("/__void_protected_7f3d9a2c", (c) => new Response(browserProtectionPage, {
+app.get("/__void_protected_7f3d9a2c", () => new Response(browserProtectionPage, {
   status: 200,
   headers: {
     "Content-Type": "text/html; charset=utf-8",
