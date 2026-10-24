@@ -524,10 +524,16 @@ function App() {
     try { const result=await apiCall<{users:AdminUser[]}>("admin-users");setUsers(result.users||[]); }
     catch(error) { setNotice(messageOf(error)); }
   }
-  async function updateAdminUser(target:AdminUser,changes:{role?:string;banned?:boolean}) {
-    setNotice("");
-    try { await apiCall("admin-update-user",{user_id:target.id,...changes});await loadAdminUsers();setNotice("User updated."); }
-    catch(error) { setNotice(messageOf(error)); }
+  function selectAdminUser(target:AdminUser) {
+    setSelectedAdminUserId(target.id);setAdminEditEmail(target.email||"");setAdminEditUsername(target.profile?.username||"");setAdminEditDisplayName(target.profile?.display_name||"");setAdminEditBio(target.profile?.bio||"");setAdminEditAvatar(target.profile?.avatar_url||"");setAdminEditRole(target.roles.includes("admin")?"admin":target.roles.includes("moderator")?"moderator":"user");setAdminEditBanned(Boolean(target.banned_until));setAdminEditVerified(Boolean(target.profile?.verified));setAdminEditNotice("");
+  }
+  async function saveAdminUser(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault();const target=users.find(item=>item.id===selectedAdminUserId);if(!target)return;setAdminEditBusy(true);setAdminEditNotice("");
+    try {
+      await apiCall("admin-update-user",{user_id:target.id,email:adminEditEmail.trim(),username:adminEditUsername.trim(),display_name:adminEditDisplayName.trim(),bio:adminEditBio.trim(),avatar_url:adminEditAvatar.trim(),role:adminEditRole,banned:adminEditBanned,verified:adminEditVerified});
+      await loadAdminUsers();setAdminEditNotice("User details saved successfully.");
+    } catch(error) { setAdminEditNotice(messageOf(error)); }
+    finally { setAdminEditBusy(false); }
   }
   async function loadAnalytics() {
     setAnalyticsError("");
