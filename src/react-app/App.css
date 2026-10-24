@@ -202,3 +202,75 @@
 .otp-field-hint{display:block;margin-top:8px;color:rgba(255,255,255,.43);font-size:10px;font-weight:450;letter-spacing:0;line-height:1.5;text-transform:none}
 @keyframes otp-digit-pop{from{transform:translateY(2px) scale(.94)}to{transform:translateY(0) scale(1)}}
 @media(max-width:640px){.otp-code-control{padding:6px}.otp-digit-row{gap:5px}.otp-digit{height:54px;border-radius:9px}.otp-code-control .otp-code-input{inset:6px!important;width:calc(100% - 12px)!important;height:54px!important}.otp-field-hint{font-size:10px}}
+
+
+/* VOID refinement pass — consistent focus, responsive spacing, and premium surfaces */
+:root {
+  color-scheme: dark;
+  --void-border: rgba(255,255,255,.11);
+  --void-border-strong: rgba(255,255,255,.22);
+  --void-surface: rgba(255,255,255,.035);
+  --void-surface-raised: rgba(255,255,255,.055);
+  --void-muted: rgba(255,255,255,.58);
+}
+html { scroll-behavior: smooth; scrollbar-color: #454545 #080808; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+::selection { background: rgba(255,255,255,.24); color: #fff; }
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid rgba(255,255,255,.88);
+  outline-offset: 3px;
+}
+:where(button, a, input, select, textarea) { -webkit-tap-highlight-color: transparent; }
+button, .button, a.button { transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease, opacity .18s ease; }
+button:disabled, .button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
+@media (hover:hover) {
+  .button:hover:not(:disabled) { transform: translateY(-1px); }
+  .panel:hover, .settings-panel:hover, .script-card:hover, .release-card:hover { border-color: rgba(255,255,255,.18); }
+}
+:where(input:not([type=checkbox]):not([type=radio]), select, textarea) {
+  max-width: 100%;
+  color-scheme: dark;
+}
+:where(input:not([type=checkbox]):not([type=radio]), select, textarea)::placeholder { color: rgba(255,255,255,.34); }
+:where(.panel, .settings-panel, .script-card, .release-card, .admin-sidebar, .admin-content) { min-width: 0; }
+:where(.admin-content, .main-content, .page-content) { overflow-wrap: anywhere; }
+:where(.admin-sidebar button, .nav-item, .topbar button) { touch-action: manipulation; }
+:where(.admin-sidebar button, .nav-item) { min-height: 40px; }
+:where(.admin-sidebar button[aria-current="page"], .nav-item[aria-current="page"]) {
+  border-color: rgba(255,255,255,.22);
+  background: linear-gradient(100deg, rgba(255,255,255,.09), rgba(255,255,255,.025));
+  box-shadow: inset 2px 0 rgba(255,255,255,.8);
+}
+:where(.panel, .settings-panel, .script-card, .release-card, .media-asset-card) {
+  box-shadow: 0 18px 55px rgba(0,0,0,.14);
+}
+:where(.panel-heading, .section-heading, .page-heading) { min-width: 0; }
+:where(.panel-heading h1, .panel-heading h2, .section-heading h1, .section-heading h2, .page-heading h1) {
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+:where(.status-badge, .badge, .pill) { max-width: 100%; overflow-wrap: anywhere; }
+:where(table) { width: 100%; border-collapse: collapse; }
+:where(pre, code) { tab-size: 2; }
+:where(img, video, iframe) { max-width: 100%; }
+img { height: auto; }
+@media (max-width: 760px) {
+  .admin-content, .settings-panel, .panel { min-width: 0; }
+  .admin-content { width: 100%; }
+  .panel-heading { flex-wrap: wrap; }
+  .panel-heading > :last-child { max-width: 100%; }
+  .button-row, .actions-row, .key-action-row { flex-wrap: wrap; }
+  .button-row .button, .actions-row .button { max-width: 100%; }
+  .script-grid, .scripts-grid { grid-template-columns: minmax(0,1fr) !important; }
+  .script-card, .release-card { min-width: 0; }
+  .script-card img, .release-card img { max-width: 100%; }
+  .admin-table-wrap, .table-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .admin-table-wrap table, .table-wrap table { min-width: 560px; }
+  .topbar { gap: 10px; }
+  .topbar > * { min-width: 0; }
+  .script-detail-backdrop { overscroll-behavior: contain; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
