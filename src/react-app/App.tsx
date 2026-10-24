@@ -649,7 +649,7 @@ function App() {
         setManagedMediaNotice("File updated. Your share link stays the same.");
       } else {
         const slugBase=slugify(title).slice(0,70)||"void-file";
-        const slug=slugBase+"-"+Array.from(crypto.getRandomValues(new Uint8Array(4)),v=>v.toString(16).padStart(2,"0")).join("").slice(0,6);
+        const slug=slugBase+"-"+Array.from(crypto.getRandomValues(new Uint8Array(8)),v=>v.toString(16).padStart(2,"0")).join("").slice(0,12);
         const file=managedMediaSelectedFile!;
         const result=await apiCall<{file:MediaFileRecord}>("media-create",{slug,title,description:managedMediaDescription.trim(),original_name:file.name,mime_type:file.type||"application/octet-stream",size_bytes:file.size,storage_path:uploadedPath});
         setManagedMediaFiles(current=>[result.file,...current]);
