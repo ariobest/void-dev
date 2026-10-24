@@ -298,3 +298,9 @@ img { height: auto; }
 .admin-content{min-width:0}.admin-layout{align-items:start}.admin-sidebar button{white-space:normal;text-align:left}
 @media(max-width:1050px){.admin-overview-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-overview-columns{grid-template-columns:1fr}}
 @media(max-width:620px){.admin-overview-stats{grid-template-columns:1fr 1fr;gap:8px}.badge-feature-grid{grid-template-columns:1fr}.custom-badge-row{flex-wrap:wrap}.custom-badge-row>div{min-width:calc(100% - 60px)}.admin-overview-hero .button-row{flex-wrap:wrap}.admin-overview-hero .button{flex:1}}
+
+
+/* Discord server link */
+.discord-logo{width:19px;height:19px;flex:0 0 19px;display:block;color:#aeb4ff;filter:drop-shadow(0 0 7px rgba(114,137,218,.24))}
+.drawer-link:has(.discord-logo){color:#d7d9ff}
+.drawer-link:has(.discord-logo):hover{background:rgba(114,137,218,.12);border-color:rgba(114,137,218,.24)}
