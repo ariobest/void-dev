@@ -744,7 +744,7 @@ function App() {
     setClaudeMessages(next);setClaudeInput("");setClaudeNotice("");setClaudeBusy(true);
     try {
       const result=await apiCall<{reply:string}>("claude-chat",{messages:next});
-      setClaudeMessages(current=>[...current,{role:"assistant",content:result.reply}].slice(-40));
+      setClaudeMessages(current=>[...current,{role:"assistant" as const,content:result.reply}].slice(-40));
     } catch(error) { setClaudeNotice(messageOf(error)); }
     finally {setClaudeBusy(false);}
   }
