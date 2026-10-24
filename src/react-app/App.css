@@ -304,3 +304,10 @@ img { height: auto; }
 .discord-logo{width:19px;height:19px;flex:0 0 19px;display:block;color:#aeb4ff;filter:drop-shadow(0 0 7px rgba(114,137,218,.24))}
 .drawer-link:has(.discord-logo){color:#d7d9ff}
 .drawer-link:has(.discord-logo):hover{background:rgba(114,137,218,.12);border-color:rgba(114,137,218,.24)}
+
+
+/* Community Discord action beside the profile */
+.community-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:40px;padding:0 14px;border:1px solid rgba(142,151,255,.28);border-radius:13px;background:linear-gradient(135deg,rgba(114,137,218,.13),rgba(255,255,255,.035));color:#e5e7ff;font:inherit;font-size:12px;font-weight:750;white-space:nowrap;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
+.community-button:hover{transform:translateY(-1px);border-color:rgba(142,151,255,.55);background:rgba(114,137,218,.16);box-shadow:0 0 22px rgba(114,137,218,.1)}
+.community-button .discord-logo{width:18px;height:18px;flex-basis:18px}
+@media(max-width:640px){.community-button{gap:7px;min-height:38px;padding:0 10px;font-size:11px}.community-button .discord-logo{width:17px;height:17px;flex-basis:17px}.topbar-right{gap:7px}.community-button span{display:inline}}
