@@ -311,3 +311,18 @@ img { height: auto; }
 .community-button:hover{transform:translateY(-1px);border-color:rgba(142,151,255,.55);background:rgba(114,137,218,.16);box-shadow:0 0 22px rgba(114,137,218,.1)}
 .community-button .discord-logo{width:18px;height:18px;flex-basis:18px}
 @media(max-width:640px){.community-button{gap:7px;min-height:38px;padding:0 10px;font-size:11px}.community-button .discord-logo{width:17px;height:17px;flex-basis:17px}.topbar-right{gap:7px}.community-button span{display:inline}}
+
+
+/* Full roadmap editing workspace */
+.roadmap-create-form,.roadmap-admin-item{padding:clamp(16px,2vw,24px);border:1px solid rgba(255,255,255,.12);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012));margin-top:16px}
+.roadmap-create-form h3,.roadmap-admin-item h3{margin:0 0 14px;font-size:16px;letter-spacing:-.02em}
+.roadmap-admin-list{display:grid;gap:12px;margin-top:20px}
+.roadmap-admin-item .panel-heading{align-items:flex-start;gap:12px;margin-bottom:16px}
+.roadmap-admin-item .form-label,.roadmap-create-form .form-label{margin-bottom:13px}
+.roadmap-admin-item input[type=range],.roadmap-create-form input[type=range]{width:100%;accent-color:var(--accent,#f5f5f5)}
+.roadmap-admin-item .setting-row,.roadmap-create-form .setting-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:8px 0 16px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:12px}
+.roadmap-admin-item .setting-row input,.roadmap-create-form .setting-row input{width:18px;height:18px;accent-color:#fff}
+.roadmap-admin-item .button-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.roadmap-admin-item .status-badge{white-space:nowrap}
+.topbar-right .community-button{order:4}
+@media(max-width:760px){.roadmap-admin-item .panel-heading{flex-wrap:wrap}.roadmap-create-form,.roadmap-admin-item{padding:14px}.roadmap-admin-item .button-row .button{flex:1}}
