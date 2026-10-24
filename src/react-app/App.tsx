@@ -766,7 +766,7 @@ function App() {
       if(!content){setChatGPTNotice("Describe the image you want to create.");return;}
       setChatGPTBusy(true);setChatGPTGeneratingImage(true);setChatGPTNotice("");
       const prompt=content;
-      setChatGPTMessages(current=>[...current,{role:"user",content:prompt}].slice(-20));
+      setChatGPTMessages(current=>[...current,{role:"user" as const,content:prompt}].slice(-20));
       setChatGPTInput("");setChatGPTImageMode(false);
       try{
         const data=await apiCall<{image:string;model?:string}>("openai-image",{prompt});
