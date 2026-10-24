@@ -743,7 +743,7 @@ function App() {
     const next=[...chatgptMessages,{role:"user" as const,content}].slice(-20);
     setChatGPTMessages(next);setChatGPTInput("");setChatGPTNotice("");setChatGPTBusy(true);
     try {
-      const {data,error}=await supabase.functions.invoke<{reply:string}>("openai-chat",{body:{messages:next}});
+      const data=await apiCall<{reply:string}>("openai-chat",{messages:next});
       if(error)throw error;
       if(!data||typeof data.reply!=="string"||!data.reply.trim())throw new Error("ChatGPT returned an empty response. Please retry.");
       setChatGPTMessages(current=>[...current,{role:"assistant" as const,content:data.reply}].slice(-40));
