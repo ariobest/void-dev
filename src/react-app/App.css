@@ -324,5 +324,4 @@ img { height: auto; }
 .roadmap-admin-item .setting-row input,.roadmap-create-form .setting-row input{width:18px;height:18px;accent-color:#fff}
 .roadmap-admin-item .button-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
 .roadmap-admin-item .status-badge{white-space:nowrap}
-.topbar-right .community-button{order:4}
 @media(max-width:760px){.roadmap-admin-item .panel-heading{flex-wrap:wrap}.roadmap-create-form,.roadmap-admin-item{padding:14px}.roadmap-admin-item .button-row .button{flex:1}}
