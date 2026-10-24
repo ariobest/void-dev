@@ -81,6 +81,55 @@ const protectionHeaders = {
 
 app.get("/api/", (c) => c.json({ name: "Void Development API", ok: true }));
 
+app.get("/api/media/:slug", async (c) => {
+  const slug = (c.req.param("slug") || "").trim();
+  if (!/^[a-z0-9-]{3,100}$/.test(slug)) return c.json({ error: "Invalid file link." }, 400);
+  try {
+    const url = new URL(SUPABASE_URL + "/functions/v1/script-api");
+    url.searchParams.set("action", "media-public");
+    url.searchParams.set("slug", slug);
+    const upstream = await fetch(url.toString(), { headers: { "Accept": "application/json" } });
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: {
+        "Content-Type": upstream.headers.get("Content-Type") || "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+      },
+    });
+  } catch {
+    return c.json({ error: "Void Media is temporarily unavailable." }, 502);
+  }
+});
+
+app.get("/media/:slug/:mode", async (c) => {
+  const slug = (c.req.param("slug") || "").trim();
+  const mode = c.req.param("mode");
+  if (!/^[a-z0-9-]{3,100}$/.test(slug) || (mode !== "download" && mode !== "view")) {
+    return c.json({ error: "Invalid media link." }, 400);
+  }
+  try {
+    const url = new URL(SUPABASE_URL + "/functions/v1/script-api");
+    url.searchParams.set("action", "media-file");
+    url.searchParams.set("slug", slug);
+    url.searchParams.set("mode", mode);
+    const upstream = await fetch(url.toString(), { headers: { "Accept": "*/*" } });
+    const headers = new Headers();
+    for (const key of ["Content-Type", "Content-Disposition", "Content-Length", "Cache-Control", "X-Content-Type-Options", "Accept-Ranges"]) {
+      const value = upstream.headers.get(key);
+      if (value) headers.set(key, value);
+    }
+    headers.set("Cache-Control", "private, no-store, max-age=0");
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set("Referrer-Policy", "no-referrer");
+    return new Response(upstream.body, { status: upstream.status, headers });
+  } catch {
+    return c.json({ error: "Void Media is temporarily unavailable." }, 502);
+  }
+});
+
+
 app.get("/__void_protected_7f3d9a2c", () => new Response(browserProtectionPage, {
   status: 200,
   headers: protectionHeaders,
