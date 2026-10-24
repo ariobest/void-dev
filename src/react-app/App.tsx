@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type FormEvent } from "react";
 import { createClient, type Session, type User } from "@supabase/supabase-js";
 import { scriptApiUrl, supabase, supabasePublicKey } from "./lib/supabase";
 import "./App.css";
@@ -23,6 +23,8 @@ type Profile = { username: string; display_name: string; bio: string; avatar_url
 type CookiePrefs = { necessary: true; analytics: boolean; personalization: boolean; decidedAt: string };
 type Analytics = { periodDays: number; totalUsers: number; events: number; uniqueVisitors: number; todayViews: number; todayVisitors: number; byEvent: Record<string, number>; limited?: boolean };
 type MediaFileRecord = { id:string; slug:string; title:string; description:string; original_name:string; mime_type:string; size_bytes:number; download_count:number; created_at:string; updated_at?:string; storage_path?:string };
+type ChatAttachment = { name:string; type:string; size:number; data:string };
+type ChatMessage = { role:"user"|"assistant"; content:string; attachments?:ChatAttachment[]; imageUrl?:string };
 type AdminUser = { id: string; email: string; created_at: string; last_sign_in_at: string | null; email_confirmed_at: string | null; banned_until: string | null; profile: (Partial<Profile> & { verified?: boolean }) | null; roles: string[] };
 
 const emptyProfile: Profile = { username: "", display_name: "", bio: "", avatar_url: "", role: "user", banned: false };
@@ -223,8 +225,12 @@ function App() {
   const [managedMediaDescription,setManagedMediaDescription] = useState("");
   const [managedMediaEditingId,setManagedMediaEditingId] = useState("");
   const [managedMediaSelectedFile,setManagedMediaSelectedFile] = useState<File|null>(null);
-  const [chatgptMessages,setChatGPTMessages] = useState<Array<{role:"user"|"assistant";content:string}>>([]);
+  const [chatgptMessages,setChatGPTMessages] = useState<ChatMessage[]>([]);
   const [chatgptInput,setChatGPTInput] = useState("");
+  const [chatgptAttachments,setChatGPTAttachments] = useState<ChatAttachment[]>([]);
+  const [chatgptImageMode,setChatGPTImageMode] = useState(false);
+  const [chatgptGeneratingImage,setChatGPTGeneratingImage] = useState(false);
+  const chatgptFileInputRef = useRef<HTMLInputElement|null>(null);
   const [chatgptBusy,setChatGPTBusy] = useState(false);
   const [chatgptNotice,setChatGPTNotice] = useState("");
   const [chatgptMobileMenu,setChatGPTMobileMenu] = useState(false);
@@ -735,26 +741,57 @@ function App() {
     catch(error) {setNotice(messageOf(error));}
   }
 
+  async function readChatAttachments(files:FileList|null) {
+    if(!files)return;
+    const picked=Array.from(files);
+    if(chatgptAttachments.length+picked.length>4){setChatGPTNotice("Attach up to 4 files per message.");return;}
+    for(const file of picked){
+      if(file.size>5*1024*1024){setChatGPTNotice(file.name+" is over the 5 MB limit.");continue;}
+      const isImage=file.type.startsWith("image/");
+      if(isImage&&!["image/png","image/jpeg","image/webp","image/gif"].includes(file.type)){setChatGPTNotice("Use PNG, JPG, WEBP, or GIF images.");continue;}
+      try{
+        const data=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>typeof reader.result==="string"?resolve(reader.result):reject(new Error("Could not read file."));reader.onerror=()=>reject(new Error("Could not read "+file.name));reader.readAsDataURL(file);});
+        setChatGPTAttachments(current=>current.length<4?[...current,{name:file.name,type:file.type||"application/octet-stream",size:file.size,data}]:current);
+      }catch(error){setChatGPTNotice(messageOf(error));}
+    }
+    if(chatgptFileInputRef.current)chatgptFileInputRef.current.value="";
+  }
+
   async function sendChatGPTMessage(e?:FormEvent<HTMLFormElement>) {
     e?.preventDefault();
     const content=chatgptInput.trim();
-    if(!content||chatgptBusy)return;
+    if((!content&&!chatgptAttachments.length)||chatgptBusy)return;
     if(!user||!isAdmin){setChatGPTNotice("Administrator access required.");return;}
-    const next=[...chatgptMessages,{role:"user" as const,content}].slice(-20);
-    setChatGPTMessages(next);setChatGPTInput("");setChatGPTNotice("");setChatGPTBusy(true);
-    try {
-      const data=await apiCall<{reply:string}>("openai-chat",{messages:next});
+    if(chatgptImageMode){
+      if(!content){setChatGPTNotice("Describe the image you want to create.");return;}
+      setChatGPTBusy(true);setChatGPTGeneratingImage(true);setChatGPTNotice("");
+      const prompt=content;
+      setChatGPTMessages(current=>[...current,{role:"user",content:prompt}].slice(-20));
+      setChatGPTInput("");setChatGPTImageMode(false);
+      try{
+        const data=await apiCall<{image:string;model?:string}>("openai-image",{prompt});
+        if(!data?.image)throw new Error("Image generation returned no image. Please retry.");
+        setChatGPTMessages(current=>[...current,{role:"assistant",content:"Created image for: "+prompt,imageUrl:data.image}].slice(-40));
+      }catch(error){setChatGPTNotice(messageOf(error));}
+      finally{setChatGPTBusy(false);setChatGPTGeneratingImage(false);}
+      return;
+    }
+    const currentAttachments=chatgptAttachments;
+    const next:ChatMessage[]=[...chatgptMessages,{role:"user",content:content||"Please review the attached file(s).",attachments:currentAttachments}].slice(-20);
+    setChatGPTMessages(next);setChatGPTInput("");setChatGPTAttachments([]);setChatGPTNotice("");setChatGPTBusy(true);
+    try{
+      const messages=next.map((message,index)=>({role:message.role,content:message.content,...(index===next.length-1&&message.role==="user"&&message.attachments?.length?{attachments:message.attachments}:{})}));
+      const data=await apiCall<{reply:string}>("openai-chat",{messages});
       if(!data||typeof data.reply!=="string"||!data.reply.trim())throw new Error("ChatGPT returned an empty response. Please retry.");
-      setChatGPTMessages(current=>[...current,{role:"assistant" as const,content:data.reply}].slice(-40));
-    } catch(error) { setChatGPTNotice(messageOf(error)); }
-    finally {setChatGPTBusy(false);}
+      setChatGPTMessages(current=>[...current,{role:"assistant",content:data.reply}].slice(-40));
+    }catch(error){setChatGPTNotice(messageOf(error));}
+    finally{setChatGPTBusy(false);}
   }
 
   function clearChatGPTChat() {
     if(chatgptBusy)return;
-    setChatGPTMessages([]);setChatGPTNotice("");
+    setChatGPTMessages([]);setChatGPTAttachments([]);setChatGPTNotice("");
   }
-
   function chooseCookies(analyticsAllowed:boolean,personalizationAllowed:boolean) {
     const prefs:CookiePrefs={necessary:true,analytics:analyticsAllowed,personalization:personalizationAllowed,decidedAt:new Date().toISOString()};
     writeCookie("void_cookie_consent",JSON.stringify(prefs));setCookiePrefs(prefs);setCookieNotice("Your cookie preferences have been saved.");setCookieCustomize(false);
@@ -826,9 +863,9 @@ function App() {
         <header className="chatgpt-topbar"><button className="chatgpt-mobile-menu" onClick={()=>setChatGPTMobileMenu(v=>!v)} aria-label="Toggle menu"><Icon name="menu"/></button><div className="chatgpt-topbar-title"><span className="chatgpt-top-avatar"><img src="https://arioscripts.cyou/media/nox-b6f0ea09c01b/view" alt="ChatGPT" onError={e=>{e.currentTarget.style.display="none";}}/><Icon name="sparkles"/></span><div><strong>ChatGPT</strong><small>OPENAI · VOID DEVELOPMENT ASSISTANT</small></div><img className="chatgpt-logo-mark" src="https://cdn.simpleicons.org/openai/ffffff" alt="OpenAI logo"/><span className="chatgpt-model-badge">CHATGPT GPT</span></div><div className="chatgpt-top-actions"><span className="chatgpt-admin-pill"><Icon name="shield-check"/> ADMIN ONLY</span><button className="chatgpt-top-icon" title="New conversation" onClick={clearChatGPTChat} disabled={chatgptBusy}><Icon name="plus"/></button><button className="chatgpt-top-icon" title="Back to admin dashboard" onClick={()=>window.location.assign("/")}><Icon name="arrow-up-right"/></button></div></header>
         {!user?<div className="chatgpt-auth-state"><span className="chatgpt-hero-emblem"><Icon name="lock"/></span><span className="section-kicker">PRIVATE ADMIN ASSISTANT</span><h1>Sign in to meet ChatGPT.</h1><p>Use your existing Void Development account. Only administrators can use this assistant.</p><form className="chatgpt-auth-form" onSubmit={handleAuth}>{otpPending?<><label>6-DIGIT EMAIL CODE<input inputMode="numeric" autoComplete="one-time-code" value={otpCode} maxLength={6} required onChange={e=>setOtpCode(e.target.value.replace(/[^0-9]/g,"").slice(0,6))} placeholder="000000"/></label><button className="chatgpt-send-button" disabled={authBusy||otpCode.length!==6}>{authBusy?"Verifying…":"Verify code"} <Icon name="arrow"/></button><button type="button" className="chatgpt-inline-button" disabled={otpCooldown>0||otpResending} onClick={()=>void resendLoginCode()}>{otpResending?"Sending…":otpCooldown>0?"Resend in "+otpCooldown+"s":"Resend code"}</button></>:<><label>EMAIL ADDRESS<input type="email" autoComplete="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="admin@example.com"/></label><label>PASSWORD<input type="password" autoComplete="current-password" value={password} required onChange={e=>setPassword(e.target.value)} placeholder="Your account password"/></label><button className="chatgpt-send-button" disabled={authBusy}>{authBusy?"Signing in…":"Continue securely"} <Icon name="arrow"/></button></>}{authMessage&&<p className="chatgpt-error">{authMessage}</p>}</form></div>:!isAdmin?<div className="chatgpt-auth-state"><span className="chatgpt-hero-emblem"><Icon name="shield-alert"/></span><span className="section-kicker">ACCESS RESTRICTED</span><h1>This space is admin-only.</h1><p>Your current account does not have the administrator role required to use ChatGPT.</p><button className="chatgpt-send-button" onClick={()=>void signOut()}>Sign out <Icon name="logout"/></button><a className="chatgpt-inline-button" href="/">Return to website</a></div>:<>
           <section className={"chatgpt-conversation"+(chatgptMessages.length?" has-messages":"")}>
-            {chatgptMessages.length===0?<div className="chatgpt-welcome"><div className="chatgpt-orbit"><span/><span/><span/><div className="chatgpt-welcome-avatar"><img src="https://arioscripts.cyou/media/nox-b6f0ea09c01b/view" alt="ChatGPT OC" onError={e=>{e.currentTarget.style.display="none";}}/><Icon name="sparkles"/></div></div><span className="section-kicker">YOUR PRIVATE AI WORKSPACE</span><h1>How can I help<br/><span>with Void today?</span></h1><p>I’m ChatGPT, your AI assistant for website operations, coding, debugging, Supabase, Cloudflare, and release planning.</p><div className="chatgpt-suggestions"><button onClick={()=>setChatGPTInput("Review the Void Development architecture and suggest the next improvements.")}><Icon name="layers"/> Review my website architecture <Icon name="arrow-up-right"/></button><button onClick={()=>setChatGPTInput("Help me debug a problem in my Void Development website. Ask me for the exact error and relevant code.")}><Icon name="bug"/> Help debug an issue <Icon name="arrow-up-right"/></button><button onClick={()=>setChatGPTInput("Help me design a new feature for the Void Development admin panel. Suggest a safe implementation plan.")}><Icon name="wand-sparkles"/> Plan an admin feature <Icon name="arrow-up-right"/></button></div></div>:<div className="chatgpt-message-list">{chatgptMessages.map((message,index)=><article key={index} className={"chatgpt-message chatgpt-message-"+message.role}><span className="chatgpt-message-avatar">{message.role==="assistant"?<img src="https://arioscripts.cyou/media/nox-b6f0ea09c01b/view" alt="" onError={e=>{e.currentTarget.style.display="none";}}/>:<span>{(profileName||userEmail||"A").slice(0,1).toUpperCase()}</span>}</span><div className="chatgpt-message-body"><div className="chatgpt-message-name">{message.role==="assistant"?"ChatGPT":"You"} <small>{message.role==="assistant"?"AI ASSISTANT":"ADMINISTRATOR"}</small></div><div className="chatgpt-message-text">{message.content.split(/\n/).map((line,lineIndex)=><span key={lineIndex}>{line||" "}{lineIndex<message.content.split(/\n/).length-1&&<br/>}</span>)}</div>{message.role==="assistant"&&<button className="chatgpt-copy-answer" onClick={()=>void navigator.clipboard.writeText(message.content).catch(()=>undefined)}><Icon name="copy"/> Copy response</button>}</div></article>)}{chatgptBusy&&<article className="chatgpt-message chatgpt-message-assistant"><span className="chatgpt-message-avatar"><img src="https://arioscripts.cyou/media/nox-b6f0ea09c01b/view" alt=""/></span><div className="chatgpt-message-body"><div className="chatgpt-message-name">ChatGPT <small>THINKING</small></div><div className="chatgpt-thinking"><i/><i/><i/></div></div></article>}<div id="openai-chat-end"/></div>}
+            {chatgptMessages.length===0?<div className="chatgpt-welcome"><div className="chatgpt-orbit"><span/><span/><span/><div className="chatgpt-welcome-avatar"><img src="https://arioscripts.cyou/media/nox-b6f0ea09c01b/view" alt="ChatGPT OC" onError={e=>{e.currentTarget.style.display="none";}}/><Icon name="sparkles"/></div></div><span className="section-kicker">YOUR PRIVATE AI WORKSPACE</span><h1>How can I help<br/><span>with Void today?</span></h1><p>I’m ChatGPT, your AI assistant for website operations, coding, debugging, Supabase, Cloudflare, and release planning.</p><div className="chatgpt-suggestions"><button onClick={()=>setChatGPTInput("Review the Void Development architecture and suggest the next improvements.")}><Icon name="layers"/> Review my website architecture <Icon name="arrow-up-right"/></button><button onClick={()=>setChatGPTInput("Help me debug a problem in my Void Development website. Ask me for the exact error and relevant code.")}><Icon name="bug"/> Help debug an issue <Icon name="arrow-up-right"/></button><button onClick={()=>setChatGPTInput("Help me design a new feature for the Void Development admin panel. Suggest a safe implementation plan.")}><Icon name="wand-sparkles"/> Plan an admin feature <Icon name="arrow-up-right"/></button></div></div>:<div className="chatgpt-message-list">{chatgptMessages.map((message,index)=><article key={index} className={"chatgpt-message chatgpt-message-"+message.role}><span className="chatgpt-message-avatar">{message.role==="assistant"?<img src="https://arioscripts.cyou/media/nox-b6f0ea09c01b/view" alt="" onError={e=>{e.currentTarget.style.display="none";}}/>:<span>{(profileName||userEmail||"A").slice(0,1).toUpperCase()}</span>}</span><div className="chatgpt-message-body"><div className="chatgpt-message-name">{message.role==="assistant"?"ChatGPT":"You"} <small>{message.role==="assistant"?"AI ASSISTANT":"ADMINISTRATOR"}</small></div><div className="chatgpt-message-text">{message.content.split(/\n/).map((line,lineIndex)=><span key={lineIndex}>{line||" "}{lineIndex<message.content.split(/\n/).length-1&&<br/>}</span>)}</div>{message.attachments?.length>0&&<div className="chatgpt-attachment-list">{message.attachments.map((file,i)=><div className="chatgpt-attachment-chip" key={i}>{file.type.startsWith("image/")?<img src={file.data} alt={file.name}/>:<Icon name="file-text"/>}<span>{file.name}<small>{formatMediaSize(file.size)}</small></span></div>)}</div>}{message.imageUrl&&<a className="chatgpt-generated-image" href={message.imageUrl} download="void-generated-image.png"><img src={message.imageUrl} alt={message.content}/><span><Icon name="download"/> Save image</span></a>}{message.role==="assistant"&&!message.imageUrl&&<button className="chatgpt-copy-answer" onClick={()=>void navigator.clipboard.writeText(message.content).catch(()=>undefined)}><Icon name="copy"/> Copy response</button>}</div></article>)}{chatgptBusy&&<article className="chatgpt-message chatgpt-message-assistant"><span className="chatgpt-message-avatar"><img src="https://arioscripts.cyou/media/nox-b6f0ea09c01b/view" alt=""/></span><div className="chatgpt-message-body"><div className="chatgpt-message-name">ChatGPT <small>THINKING</small></div><div className="chatgpt-thinking"><i/><i/><i/></div></div></article>}<div id="openai-chat-end"/></div>}
           </section>
-          <div className="chatgpt-composer-wrap"><div className="chatgpt-composer-shell"><form onSubmit={sendChatGPTMessage}><textarea value={chatgptInput} onChange={e=>setChatGPTInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void sendChatGPTMessage();}}} rows={1} maxLength={8000} placeholder="Message ChatGPT about your website…" disabled={chatgptBusy}/><button type="submit" className="chatgpt-submit" disabled={chatgptBusy||!chatgptInput.trim()} aria-label="Send message"><Icon name={chatgptBusy?"loader-circle":"arrow-up"}/></button></form><div className="chatgpt-composer-foot"><span><Icon name="shield-check"/> Private to administrators</span><span>Enter to send · Shift + Enter for a new line</span></div></div>{chatgptNotice&&<div className="chatgpt-notice"><Icon name="alert-circle"/><span>{chatgptNotice}</span><button onClick={()=>setChatGPTNotice("")} aria-label="Dismiss error"><Icon name="close"/></button></div>}<p className="chatgpt-disclaimer">ChatGPT can make mistakes. Review code and important changes before using them. Chat currently provides guidance; it does not execute admin actions.</p></div>
+          <div className="chatgpt-composer-wrap"><div className="chatgpt-composer-shell">{chatgptAttachments.length>0&&<div className="chatgpt-pending-attachments">{chatgptAttachments.map((file,index)=><div className="chatgpt-attachment-chip" key={index}>{file.type.startsWith("image/")?<img src={file.data} alt={file.name}/>:<Icon name="file-text"/>}<span>{file.name}<small>{formatMediaSize(file.size)}</small></span><button type="button" onClick={()=>setChatGPTAttachments(current=>current.filter((_,i)=>i!==index))} aria-label={"Remove "+file.name}><Icon name="close"/></button></div>)}</div>}{chatgptImageMode&&<div className="chatgpt-mode-notice"><Icon name="image"/> Image creation mode — describe the image you want.</div>}<form onSubmit={sendChatGPTMessage}><input ref={chatgptFileInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.txt,.md,.csv,.json,.js,.ts,.tsx,.jsx,.html,.css,.lua,.log,.xml" className="chatgpt-hidden-file-input" onChange={e=>void readChatAttachments(e.target.files)}/><button type="button" className={"chatgpt-tool-button"+(chatgptAttachments.length?" chatgpt-tool-active":"")} title="Attach files or images" aria-label="Attach files or images" onClick={()=>chatgptFileInputRef.current?.click()} disabled={chatgptBusy}><Icon name="plus"/></button><button type="button" className={"chatgpt-tool-button"+(chatgptImageMode?" chatgpt-tool-active":"")} title="Create an image" aria-label="Create an image" onClick={()=>{setChatGPTImageMode(v=>!v);setChatGPTAttachments([]);setChatGPTNotice("");}} disabled={chatgptBusy}><Icon name="image"/></button><textarea value={chatgptInput} onChange={e=>setChatGPTInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void sendChatGPTMessage();}}} rows={1} maxLength={8000} placeholder={chatgptImageMode?"Describe an image to generate…":"Message ChatGPT or attach files…"} disabled={chatgptBusy}/><button type="submit" className="chatgpt-submit" disabled={chatgptBusy||(!chatgptInput.trim()&&!chatgptAttachments.length)} aria-label={chatgptImageMode?"Generate image":"Send message"}><Icon name={chatgptGeneratingImage?"loader-circle":chatgptImageMode?"image":"arrow-up"}/></button></form><div className="chatgpt-composer-foot"><span><Icon name="shield-check"/> Private to administrators</span><span>Attach files/images · Create images · Enter to send</span></div></div>
         </>}
       </main>
     </div>
