@@ -123,7 +123,7 @@ function App() {
   const [accent,setAccent] = useState(() => { try { return localStorage.getItem("void-accent") || "#f5f5f5"; } catch { return "#f5f5f5"; } });
   const isDedicatedProtector = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/protected";
   const isDedicatedFiles = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/files";
-  const isDedicatedClaude = typeof window !== "undefined" && window.location.pathname.replace(/\\/+$/, "") === "/admin/claude";
+  const isDedicatedClaude = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/claude";
   const publicMediaMatch = typeof window !== "undefined" ? window.location.pathname.match(/^\/media\/([a-z0-9-]{3,100})\/?$/) : null;
   const isPublicMediaPage = Boolean(publicMediaMatch);
   const publicMediaSlug = publicMediaMatch?.[1] || "";
