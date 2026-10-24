@@ -22,6 +22,7 @@ type ScriptRecord = {
 type Profile = { username: string; display_name: string; bio: string; avatar_url: string; role: string; banned: boolean };
 type CookiePrefs = { necessary: true; analytics: boolean; personalization: boolean; decidedAt: string };
 type Analytics = { periodDays: number; totalUsers: number; events: number; uniqueVisitors: number; todayViews: number; todayVisitors: number; byEvent: Record<string, number>; limited?: boolean };
+type MediaFileRecord = { id:string; slug:string; title:string; description:string; original_name:string; mime_type:string; size_bytes:number; download_count:number; created_at:string; updated_at?:string; storage_path?:string };
 type AdminUser = { id: string; email: string; created_at: string; last_sign_in_at: string | null; email_confirmed_at: string | null; banned_until: string | null; profile: (Partial<Profile> & { verified?: boolean }) | null; roles: string[] };
 
 const emptyProfile: Profile = { username: "", display_name: "", bio: "", avatar_url: "", role: "user", banned: false };
@@ -113,6 +114,10 @@ function App() {
   const [themeId,setThemeId] = useState(() => { try { return localStorage.getItem("void-theme") || "spotlight"; } catch { return "spotlight"; } });
   const [accent,setAccent] = useState(() => { try { return localStorage.getItem("void-accent") || "#f5f5f5"; } catch { return "#f5f5f5"; } });
   const isDedicatedProtector = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/protected";
+  const isDedicatedFiles = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/files";
+  const publicMediaMatch = typeof window !== "undefined" ? window.location.pathname.match(/^\/media\/([a-z0-9-]{3,100})\/?$/) : null;
+  const isPublicMediaPage = Boolean(publicMediaMatch);
+  const publicMediaSlug = publicMediaMatch?.[1] || "";
   const isBrowserProtectionUrl = typeof window !== "undefined" && /^\/(?:protected-load|load)\/[^/]+\/?$/.test(window.location.pathname);
   const [active,setActive] = useState(() => isDedicatedProtector ? "Admin panel" : "Home");
   const [adminTab,setAdminTab] = useState(() => isDedicatedProtector ? "Add scripts" : "Overview");
@@ -200,6 +205,18 @@ function App() {
   const [mediaAssets,setMediaAssets] = useState<Array<{name:string;url:string;created_at?:string;size?:number;contentType?:string}>>([]);
   const [mediaBusy,setMediaBusy] = useState(false);
   const [mediaNotice,setMediaNotice] = useState("");
+  const [managedMediaFiles,setManagedMediaFiles] = useState<MediaFileRecord[]>([]);
+  const [managedMediaBusy,setManagedMediaBusy] = useState(false);
+  const [managedMediaSaving,setManagedMediaSaving] = useState(false);
+  const [managedMediaNotice,setManagedMediaNotice] = useState("");
+  const [managedMediaSearch,setManagedMediaSearch] = useState("");
+  const [managedMediaTitle,setManagedMediaTitle] = useState("");
+  const [managedMediaDescription,setManagedMediaDescription] = useState("");
+  const [managedMediaEditingId,setManagedMediaEditingId] = useState("");
+  const [managedMediaSelectedFile,setManagedMediaSelectedFile] = useState<File|null>(null);
+  const [publicMediaFile,setPublicMediaFile] = useState<MediaFileRecord|null>(null);
+  const [publicMediaBusy,setPublicMediaBusy] = useState(false);
+  const [publicMediaError,setPublicMediaError] = useState("");
   const [endpointStatus,setEndpointStatus] = useState("Checking endpoint…");
   const [apiSample] = useState("POST /functions/v1/script-api\nContent-Type: application/json\nAuthorization: Bearer YOUR_USER_ACCESS_TOKEN\n\n{\n  \"action\": \"validate\",\n  \"script\": \"your-script-slug\",\n  \"key\": \"VOID-XX-XXX-XXXX\"\n}");
   const [auditRows,setAuditRows] = useState<Array<Record<string,unknown>>>([]);
@@ -283,6 +300,29 @@ function App() {
     });
     return () => { mounted=false; subscription.unsubscribe(); };
   },[refreshProfile]);
+
+  useEffect(() => {
+    if (!isPublicMediaPage || !publicMediaSlug) return;
+    let cancelled = false;
+    setPublicMediaBusy(true); setPublicMediaError(""); setPublicMediaFile(null);
+    fetch("/api/media/"+encodeURIComponent(publicMediaSlug), {headers:{"Accept":"application/json"}})
+      .then(async response => { const data=await response.json().catch(()=>({error:"Could not read file details."})); if(!response.ok) throw new Error(typeof data.error==="string"?data.error:"File not found."); return data as {file:MediaFileRecord}; })
+      .then(data => { if(!cancelled) setPublicMediaFile(data.file); })
+      .catch(error => { if(!cancelled) setPublicMediaError(messageOf(error)); })
+      .finally(() => { if(!cancelled) setPublicMediaBusy(false); });
+    return () => { cancelled=true; };
+  },[isPublicMediaPage,publicMediaSlug]);
+
+  useEffect(() => {
+    if (!isDedicatedFiles || !user || !isAdmin) return;
+    let cancelled = false;
+    setManagedMediaBusy(true); setManagedMediaNotice("");
+    apiCall<{files:MediaFileRecord[]}>("media-list")
+      .then(data => { if(!cancelled) setManagedMediaFiles(data.files||[]); })
+      .catch(error => { if(!cancelled) setManagedMediaNotice(messageOf(error)); })
+      .finally(() => { if(!cancelled) setManagedMediaBusy(false); });
+    return () => { cancelled=true; };
+  },[isDedicatedFiles,user?.id,isAdmin,apiCall]);
 
   useEffect(() => { void refreshScripts(); },[refreshScripts]);
   useEffect(() => {
