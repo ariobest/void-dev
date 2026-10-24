@@ -403,3 +403,5 @@ img { height: auto; }
 .user-edit-note{font-size:11px;line-height:1.55;margin:0}
 @media(max-width:900px){.users-admin-layout{grid-template-columns:1fr}.users-picker{max-height:340px;overflow:auto}.users-editor{padding:15px}}
 @media(max-width:560px){.users-toolbar{width:100%;align-items:stretch}.users-toolbar .search-box{flex:1;min-width:0}.users-toolbar .button{flex-shrink:0}.users-editor-title{flex-direction:column}.user-account-meta{grid-template-columns:1fr}.user-account-meta>span{flex-direction:row;align-items:center;justify-content:space-between}.user-account-meta strong{text-align:right}.users-editor{padding:12px}.users-picker{max-height:300px}}
+
+.button-danger{border:1px solid rgba(255,105,105,.32)!important;color:#ff8d8d!important;background:rgba(255,80,80,.055)!important}.button-danger:hover{background:rgba(255,80,80,.12)!important}
