@@ -615,6 +615,69 @@ function App() {
     } catch(error) {setNotice("Could not save role badge and grants: "+messageOf(error));}
   }
 
+  async function saveManagedMedia(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if(!user||!isAdmin){setManagedMediaNotice("Administrator access required.");return;}
+    const title=managedMediaTitle.trim();
+    if(!title){setManagedMediaNotice("Give this file a title.");return;}
+    if(!managedMediaEditingId&&!managedMediaSelectedFile){setManagedMediaNotice("Choose a file to upload first.");return;}
+    if(managedMediaSelectedFile&&managedMediaSelectedFile.size>100*1024*1024){setManagedMediaNotice("Files must be 100 MB or smaller.");return;}
+    setManagedMediaSaving(true);setManagedMediaNotice("");
+    let uploadedPath="";
+    const existing=managedMediaFiles.find(file=>file.id===managedMediaEditingId);
+    try {
+      if(managedMediaSelectedFile){
+        const safeName=managedMediaSelectedFile.name.replace(/[^a-zA-Z0-9._-]+/g,"-").replace(/^-+|-+$/g,"").slice(-150)||"download.bin";
+        uploadedPath="files/"+crypto.randomUUID()+"-"+safeName;
+        const {error}=await supabase.storage.from("void-media").upload(uploadedPath,managedMediaSelectedFile,{cacheControl:"3600",contentType:managedMediaSelectedFile.type||"application/octet-stream",upsert:false});
+        if(error)throw error;
+      }
+      if(managedMediaEditingId&&existing){
+        const payload:Record<string,unknown>={id:managedMediaEditingId,title,description:managedMediaDescription.trim()};
+        if(managedMediaSelectedFile){payload.storage_path=uploadedPath;payload.original_name=managedMediaSelectedFile.name;payload.mime_type=managedMediaSelectedFile.type||"application/octet-stream";payload.size_bytes=managedMediaSelectedFile.size;}
+        const result=await apiCall<{file:MediaFileRecord}>("media-update",payload);
+        if(uploadedPath&&existing.storage_path) await supabase.storage.from("void-media").remove([existing.storage_path]);
+        setManagedMediaFiles(current=>current.map(file=>file.id===managedMediaEditingId?result.file:file));
+        setManagedMediaNotice("File updated. Your share link stays the same.");
+      } else {
+        const slugBase=slugify(title).slice(0,70)||"void-file";
+        const slug=slugBase+"-"+Array.from(crypto.getRandomValues(new Uint8Array(4)),v=>v.toString(16).padStart(2,"0")).join("").slice(0,6);
+        const file=managedMediaSelectedFile!;
+        const result=await apiCall<{file:MediaFileRecord}>("media-create",{slug,title,description:managedMediaDescription.trim(),original_name:file.name,mime_type:file.type||"application/octet-stream",size_bytes:file.size,storage_path:uploadedPath});
+        setManagedMediaFiles(current=>[result.file,...current]);
+        setManagedMediaNotice("Upload complete. Your custom-domain share link is ready.");
+      }
+      setManagedMediaTitle("");setManagedMediaDescription("");setManagedMediaEditingId("");setManagedMediaSelectedFile(null);
+    } catch(error) {
+      if(uploadedPath) await supabase.storage.from("void-media").remove([uploadedPath]).catch(()=>undefined);
+      setManagedMediaNotice("Could not save file: "+messageOf(error));
+    } finally {setManagedMediaSaving(false);}
+  }
+
+  function editManagedMedia(file:MediaFileRecord) {
+    setManagedMediaEditingId(file.id);setManagedMediaTitle(file.title);setManagedMediaDescription(file.description||"");setManagedMediaSelectedFile(null);setManagedMediaNotice("");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  async function deleteManagedMedia(file:MediaFileRecord) {
+    if(!user||!isAdmin){setManagedMediaNotice("Administrator access required.");return;}
+    if(!window.confirm('Delete "'+file.title+'"? Anyone using its share link will no longer be able to open it.'))return;
+    setManagedMediaSaving(true);setManagedMediaNotice("");
+    try {
+      await apiCall("media-delete",{id:file.id});
+      setManagedMediaFiles(current=>current.filter(item=>item.id!==file.id));
+      if(managedMediaEditingId===file.id){setManagedMediaEditingId("");setManagedMediaTitle("");setManagedMediaDescription("");setManagedMediaSelectedFile(null);}
+      setManagedMediaNotice("File deleted and its share link disabled.");
+    } catch(error) {setManagedMediaNotice("Could not delete file: "+messageOf(error));}
+    finally {setManagedMediaSaving(false);}
+  }
+
+  async function copyManagedMediaLink(file:MediaFileRecord) {
+    const url=window.location.origin+"/media/"+file.slug;
+    try {await navigator.clipboard.writeText(url);setManagedMediaNotice("Share link copied: "+url);}
+    catch {setManagedMediaNotice("Copy this share link: "+url);}
+  }
+
   async function loadMedia() {
     if(!user||!isAdmin) { setMediaNotice("Administrator access required."); return; }
     setMediaBusy(true); setMediaNotice("");
