@@ -370,3 +370,36 @@ img { height: auto; }
 .release-share-preview small{font-size:9px;color:rgba(255,255,255,.43);letter-spacing:.12em}
 .release-share-preview strong{font-size:11px;font-weight:550;overflow-wrap:anywhere;color:rgba(255,255,255,.8)}
 @media(max-width:640px){.script-card-art{min-height:160px}.script-card-watermark{font-size:170px;top:-15px}.script-card-inner{padding:15px}.script-card-premium .script-card-footer{margin:16px -15px -15px;padding:12px 15px}.release-row-actions{margin:0}.release-share-preview{align-items:flex-start;flex-direction:column}.release-share-preview .button{width:100%}}
+
+/* Admin user directory and full account editor */
+.users-admin-panel{min-width:0}
+.users-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.users-admin-layout{display:grid;grid-template-columns:minmax(245px,.78fr) minmax(0,1.5fr);gap:16px;margin-top:18px;align-items:start}
+.users-picker,.users-editor{min-width:0;border:1px solid rgba(255,255,255,.09);border-radius:18px;background:rgba(255,255,255,.018);overflow:hidden}
+.users-picker-heading{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.user-picker-item{display:flex;width:100%;align-items:center;gap:11px;padding:13px 14px;border:0;border-bottom:1px solid rgba(255,255,255,.055);background:transparent;color:inherit;text-align:left;cursor:pointer;transition:background .18s,border-color .18s}
+.user-picker-item:hover{background:rgba(255,255,255,.045)}
+.user-picker-item.user-picker-selected{background:linear-gradient(100deg,rgba(255,255,255,.09),rgba(255,255,255,.025));box-shadow:inset 2px 0 0 rgba(255,255,255,.9)}
+.user-picker-avatar{display:grid;place-items:center;width:38px;height:38px;flex:0 0 38px;border:1px solid rgba(255,255,255,.18);border-radius:13px;background:rgba(255,255,255,.055);font-weight:750}
+.user-picker-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.user-picker-copy strong,.user-picker-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-picker-copy strong{font-size:13px}.user-picker-copy small{font-size:11px;color:var(--muted,#969696)}
+.user-picker-item>.icon{font-size:14px;color:#a6a6a6}
+.users-empty{padding:14px}
+.users-editor{padding:18px}
+.users-editor-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:15px;border-bottom:1px solid rgba(255,255,255,.08)}
+.users-editor-title h3{margin:5px 0 4px;font-size:20px;overflow-wrap:anywhere}
+.users-editor-title p{margin:0;font-size:11px;overflow-wrap:anywhere}
+.user-account-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.user-account-meta>span{display:flex;flex-direction:column;gap:5px;min-width:0;padding:11px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:rgba(255,255,255,.025)}
+.user-account-meta small{font-size:10px;color:var(--muted,#969696)}
+.user-account-meta strong{font-size:11px;overflow-wrap:anywhere}
+.user-edit-form{gap:14px}
+.user-avatar-preview{display:flex;align-items:center;gap:10px;color:var(--muted,#969696);font-size:12px}
+.user-avatar-preview img{width:46px;height:46px;object-fit:cover;border-radius:14px;border:1px solid rgba(255,255,255,.14)}
+.users-no-selection{min-height:320px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px}
+.users-no-selection-icon{display:grid;place-items:center;width:58px;height:58px;border:1px solid rgba(255,255,255,.15);border-radius:18px;background:rgba(255,255,255,.04);font-size:23px}
+.users-no-selection h3{margin:16px 0 6px}.users-no-selection p{max-width:290px;margin:0;font-size:13px}
+.user-edit-note{font-size:11px;line-height:1.55;margin:0}
+@media(max-width:900px){.users-admin-layout{grid-template-columns:1fr}.users-picker{max-height:340px;overflow:auto}.users-editor{padding:15px}}
+@media(max-width:560px){.users-toolbar{width:100%;align-items:stretch}.users-toolbar .search-box{flex:1;min-width:0}.users-toolbar .button{flex-shrink:0}.users-editor-title{flex-direction:column}.user-account-meta{grid-template-columns:1fr}.user-account-meta>span{flex-direction:row;align-items:center;justify-content:space-between}.user-account-meta strong{text-align:right}.users-editor{padding:12px}.users-picker{max-height:300px}}
