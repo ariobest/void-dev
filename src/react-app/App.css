@@ -382,7 +382,7 @@ img { height: auto; }
 .user-picker-item.user-picker-selected{background:linear-gradient(100deg,rgba(255,255,255,.09),rgba(255,255,255,.025));box-shadow:inset 2px 0 0 rgba(255,255,255,.9)}
 .user-picker-avatar{display:grid;place-items:center;width:38px;height:38px;flex:0 0 38px;border:1px solid rgba(255,255,255,.18);border-radius:13px;background:rgba(255,255,255,.055);font-weight:750}
 .user-picker-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
-.user-picker-copy strong,.user-picker-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-picker-copy strong,.user-picker-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.user-picker-name,.users-editor-profile-name{display:inline-flex;align-items:center;gap:7px}.profile-role-badge{display:inline-grid;place-items:center;flex:0 0 auto;width:21px;height:21px;border:1px solid;border-radius:50%;background:rgba(255,255,255,.045);vertical-align:middle}.profile-role-badge .badge-glyph{width:14px;height:14px}
 .user-picker-copy strong{font-size:13px}.user-picker-copy small{font-size:11px;color:var(--muted,#969696)}
 .user-picker-item>.icon{font-size:14px;color:#a6a6a6}
 .users-empty{padding:14px}
