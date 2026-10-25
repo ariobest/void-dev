@@ -64,7 +64,7 @@ h1 span{display:block;margin-top:10px;color:rgba(255,255,255,.64);font-size:.72e
 <p class="description">This script is delivered through our protected loader. Its source isn't displayed on this page. If you were looking for the script itself, use the official loader provided by its creator.</p>
 <div class="divider"></div>
 <div class="status"><span class="status-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="5" y="10" width="14" height="11" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 14v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span> Protected endpoint <span aria-hidden="true">·</span> Source hidden in browser</div>
-<div class="actions"><a class="btn primary" href="https://arioscripts.cyou/" rel="noopener"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 5 7 7-7 7M21 12H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Visit Void Development</a><a class="btn secondary" href="https://arioscripts.cyou/" rel="noopener">Explore releases</a></div>
+<div class="actions"><a class="btn primary" href="https://voiddev.bond/" rel="noopener"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 5 7 7-7 7M21 12H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Visit Void Development</a><a class="btn secondary" href="https://voiddev.bond/" rel="noopener">Explore releases</a></div>
 </section>
 <div class="footer"><span class="footer-mark">V/</span> Built for creators. Protected by Void.</div>
 </main>
