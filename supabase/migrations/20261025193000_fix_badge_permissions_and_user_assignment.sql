@@ -3,6 +3,7 @@ grant select on table public.badges to anon, authenticated;
 grant insert, update, delete on table public.badges to authenticated;
 grant select on table public.user_badges to anon, authenticated;
 grant insert, update, delete on table public.user_badges to authenticated;
+revoke all on table public.void_role_feature_grants from anon, public;
 grant select, insert, update, delete on table public.void_role_feature_grants to authenticated;
 
 drop policy if exists badges_admin_insert on public.badges;
