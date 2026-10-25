@@ -23,14 +23,6 @@
     {
       "pattern": "arioscripts.cyou/*",
       "zone_name": "arioscripts.cyou"
-    },
-    {
-      "pattern": "voiddev.bond",
-      "custom_domain": true
-    },
-    {
-      "pattern": "www.voiddev.bond",
-      "custom_domain": true
     }
   ]
 }
