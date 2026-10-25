@@ -1,10 +1,7 @@
 
-grant select on table public.badges to anon, authenticated;
-grant insert, update, delete on table public.badges to authenticated;
-grant select on table public.user_badges to anon, authenticated;
-grant insert, update, delete on table public.user_badges to authenticated;
-revoke all on table public.void_role_feature_grants from anon, public;
-grant select, insert, update, delete on table public.void_role_feature_grants to authenticated;
+revoke all on table public.badges, public.user_badges, public.void_role_feature_grants from anon, authenticated, public;
+grant select on table public.badges, public.user_badges to anon;
+grant select, insert, update, delete on table public.badges, public.user_badges, public.void_role_feature_grants to authenticated;
 
 drop policy if exists badges_admin_insert on public.badges;
 create policy badges_admin_insert on public.badges for insert to authenticated
