@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "void-website",
+  "name": "void-dev",
   "main": "./src/worker/index.ts",
   "compatibility_date": "2025-10-08",
   "compatibility_flags": [
@@ -21,8 +21,8 @@
   },
   "routes": [
     {
-      "pattern": "arioscripts.cyou/*",
-      "zone_name": "arioscripts.cyou"
+      "pattern": "voiddev.bond/*",
+      "zone_name": "voiddev.bond"
     }
   ]
 }
