@@ -67,8 +67,59 @@ function BadgeGlyph({name,size=22,strokeWidth=1.7}:{name:string;size?:number;str
 function DiscordLogo() { return <svg className="discord-logo" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M19.73 5.12A18.4 18.4 0 0 0 15.2 3.7l-.56 1.14a16.7 16.7 0 0 0-5.28 0L8.8 3.7a18.4 18.4 0 0 0-4.53 1.42C1.4 9.36.62 13.5 1.01 17.58a18.5 18.5 0 0 0 5.56 2.82l1.2-1.96a12 12 0 0 1-1.9-.92l.46-.36c3.67 1.7 7.65 1.7 11.28 0l.47.36a12 12 0 0 1-1.91.92l1.2 1.96a18.5 18.5 0 0 0 5.56-2.82c.46-4.73-.79-8.83-3.2-12.46ZM8.82 14.9c-1.1 0-2-.99-2-2.2s.88-2.2 2-2.2 2.02 1 2 2.2c0 1.21-.88 2.2-2 2.2Zm6.36 0c-1.1 0-2-.99-2-2.2s.88-2.2 2-2.2 2.02 1 2 2.2c0 1.21-.88 2.2-2 2.2Z"/></svg>; }
 
 function Icon({ name }: { name: string }) {
-  const icons: Record<string,string> = {home:"⌂",scripts:"▤",editor:"⌘",roadmap:"◷",keys:"⌁",settings:"⚙",admin:"◈",profile:"◎",saved:"☆",bell:"♧",shield:"⬡",menu:"☰",search:"⌕",arrow:"↗",check:"✓",lock:"▣",palette:"◉",upload:"↑",release:"✦",history:"↺",chart:"▥",api:"⌘",activity:"⌁",users:"♙",clock:"◷",media:"▧",discord:"◉",help:"?",close:"×", "mail-check":"✉",archive:"▣",file:"▤",image:"▧",video:"▶", "file-text":"▤",database:"▥",calendar:"▦",download:"↓",copy:"▢","external-link":"↗",edit:"✎",trash:"⌫",refresh:"↻","upload-cloud":"↑","cloud-upload":"↑","shield-check":"⬡","shield-alert":"⚠","file-check":"✓","folder-open":"▱",logout:"↗"};
-  return <span className="icon" aria-hidden="true">{icons[name] || "•"}</span>;
+  const paths:Record<string,React.ReactNode>={
+    home:<><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></>,
+    scripts:<><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></>,
+    editor:<><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m8 9-3 3 3 3M13 15h4"/></>,
+    roadmap:<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></>,
+    keys:<><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8 2 2-2 2 2 2-3 3-2-2-3 3"/></>,
+    settings:<><circle cx="12" cy="12" r="3"/><path d="m19 15 2 2-2 3-3-1-2 2h-3l-1-3-3-1-2-3 2-2V9l3-2 3 1 2-2h3l1 3 3 1z"/></>,
+    admin:<><path d="M12 3 20 7v5c0 5-3.5 7.8-8 9-4.5-1.2-8-4-8-9V7z"/><path d="m9 12 2 2 4-4"/></>,
+    profile:<><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>,
+    saved:<><path d="M6 3h12v18l-6-4-6 4z"/></>,
+    bell:<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></>,
+    shield:<><path d="M12 3 20 6v5c0 5-3.5 7.8-8 10-4.5-2.2-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></>,
+    menu:<path d="M4 6h16M4 12h16M4 18h16"/>,
+    search:<><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></>,
+    arrow:<><path d="M7 17 17 7M7 7h10v10"/></>,
+    check:<path d="m5 12 4 4L19 6"/>,
+    lock:<><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>,
+    palette:<><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3 2 2 0 0 1 1.5-3h1A5 5 0 0 0 22 10C21 6 17 3 12 3Z"/><path d="M7 10h.1M10 7h.1M15 7.5h.1"/></>,
+    upload:<><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 14v6h14v-6"/></>,
+    release:<><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></>,
+    history:<><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></>,
+    chart:<><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></>,
+    api:<><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></>,
+    activity:<path d="M3 12h4l3-8 4 16 3-8h4"/>,
+    users:<><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2zM16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v1"/></>,
+    clock:<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    media:<><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></>,
+    discord:<><path d="M19.7 5.1A18 18 0 0 0 15.2 3.7l-.6 1.1a16 16 0 0 0-5.2 0l-.6-1.1a18 18 0 0 0-4.5 1.4C1.4 9.3.7 13.5 1 17.6a18 18 0 0 0 5.6 2.8l1.2-2a12 12 0 0 1-1.9-.9l.5-.4c3.7 1.7 7.6 1.7 11.3 0l.4.4a12 12 0 0 1-1.9.9l1.2 2a18 18 0 0 0 5.6-2.8c.4-4.7-.8-8.8-3.3-12.5Z"/><circle cx="8.8" cy="12.7" r="1"/><circle cx="15.2" cy="12.7" r="1"/></>,
+    help:<><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 4.4 1.9c-1.2 1-1.9 1.4-1.9 3M12 17h.01"/></>,
+    close:<path d="m6 6 12 12M18 6 6 18"/>,
+    "mail-check":<><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6m-7 8 2 2 4-4"/></>,
+    archive:<><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/></>,
+    file:<><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></>,
+    image:<><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></>,
+    video:<><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></>,
+    "file-text":<><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></>,
+    database:<><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></>,
+    calendar:<><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2"/></>,
+    download:<><path d="M12 3v12m-5-5 5 5 5-5"/><path d="M5 17v4h14v-4"/></>,
+    copy:<><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></>,
+    "external-link":<><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></>,
+    edit:<><path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/></>,
+    trash:<><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 10v7M14 10v7"/></>,
+    refresh:<><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9A7 7 0 0 1 18 6M4 12l2 6a7 7 0 0 0 12.5-3"/></>,
+    "upload-cloud":<><path d="M12 16V8m-4 4 4-4 4 4"/><path d="M20 16.5A4.5 4.5 0 0 0 18 8h-1A6 6 0 0 0 5 10a4 4 0 0 0 0 8h2"/></>,
+    "cloud-upload":<><path d="M12 16V8m-4 4 4-4 4 4"/><path d="M20 16.5A4.5 4.5 0 0 0 18 8h-1A6 6 0 0 0 5 10a4 4 0 0 0 0 8h2"/></>,
+    "shield-check":<><path d="M12 3 20 6v5c0 5-3.5 7.8-8 10-4.5-2.2-8-5-8-10V6z"/><path d="m8 12 2.5 2.5L16 9"/></>,
+    "shield-alert":<><path d="M12 3 20 6v5c0 5-3.5 7.8-8 10-4.5-2.2-8-5-8-10V6z"/><path d="M12 8v5m0 3h.01"/></>,
+    "file-check":<><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5m-9 6 2 2 4-4"/></>,
+    "folder-open":<><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2H7l-4 9z"/><path d="M3 19h14l4-9H7z"/></>,
+    logout:<><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></>
+  };
+  return <svg className="icon icon-svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || <circle cx="12" cy="12" r="8" />}</svg>;
 }
 
 function readCookie(name: string) {
