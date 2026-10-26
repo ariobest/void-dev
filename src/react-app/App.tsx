@@ -3,8 +3,6 @@ import { createClient, type Session, type User } from "@supabase/supabase-js";
 import { scriptApiUrl, supabase, supabasePublicKey } from "./lib/supabase";
 import "./App.css";
 import "./VoidHomeEnhancements.css";
-import "./VoidHomeEnhancements.css";
-import "./VoidHomeEnhancements.css";
 import VoidHomeEnhancements from "./VoidHomeEnhancements";
 
 const logo = "https://cqtwmxojwwyeasstuhgb.supabase.co/storage/v1/object/public/void-files/1792744606438-void-logo-icon.png";
@@ -327,8 +325,7 @@ function App() {
       setSession(nextSession); setUser(nextSession?.user||null);
       window.setTimeout(() => { void refreshProfile(nextSession?.user||null); },0);
     });
-    return (
-      <VoidHomeEnhancements />) => { mounted=false; subscription.unsubscribe(); };
+    return () => { mounted=false; subscription.unsubscribe(); };
   },[refreshProfile]);
 
   useEffect(() => {
@@ -924,6 +921,7 @@ function App() {
   return (
     <div className={"app theme-"+themeId+(reducedMotion?" reduce-motion":"")+(spotlight?" spotlight-on":"")+(isDedicatedProtector?" dedicated-protector":"")+(dedicatedAuthorized?" dedicated-authorized":"")} style={themeStyle}>
       <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
+      <VoidHomeEnhancements />
       {isAdmin&&active==="Admin panel"&&!isDedicatedProtector&&!isDedicatedFiles&&!isDedicatedChatGPT&&<button className="chatgpt-floating-trigger" onClick={()=>window.location.assign("/admin/chatgpt")} aria-label="Open ChatGPT AI assistant"><span className="chatgpt-floating-avatar"><img src="https://cdn.simpleicons.org/openai/ffffff" alt="ChatGPT logo" onError={e=>{e.currentTarget.style.display="none";}}/></span><span><strong>Ask ChatGPT</strong><small>Void AI assistant</small></span><Icon name="arrow-up-right"/></button>}
       {!isDedicatedProtector&&<header className="topbar">
         <button className="brand" onClick={()=>setPage("Home")} aria-label="Void Development home"><img src={logo} alt="Void Development logo"/><span className="brand-word">Void Development<span className="brand-dot">.</span></span></button>
