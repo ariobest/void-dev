@@ -376,6 +376,7 @@ function App() {
   },[otpCooldown>0]);
   useEffect(() => { void refreshRoadmap(); },[refreshRoadmap]);
   useEffect(() => { if (active==="Home"||active==="Scripts"||active==="Releases") void trackEvent(active==="Scripts"?"script_view":active==="Releases"?"release_view":"page_view","/"+slugify(active)); },[active,trackEvent]);
+  useEffect(() => { if(active==="Admin panel"&&isAdmin&&adminTab==="Overview") void loadExecutionStats(""); },[active,isAdmin,adminTab]);
   useEffect(() => {
     let mounted=true;
     fetch(scriptApiUrl+"?action=health",{headers:{apikey:supabasePublicKey}}).then(async r=>{const d=await r.json();if(mounted)setEndpointStatus(r.ok&&d.ok?"Online · API v"+d.version:"Unhealthy · "+(d.error||r.status));}).catch(()=>{if(mounted)setEndpointStatus("Offline · could not reach API");});
