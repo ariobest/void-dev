@@ -729,3 +729,26 @@ img { height: auto; }
 @media (prefers-reduced-motion: reduce) {
   .app:not(.dedicated-protector) > .topbar { scroll-margin-top: 0; }
 }
+
+
+/* Void Loader execution analytics */
+.void-execution-panel{margin:18px 0 22px;scroll-margin-top:24px}
+.void-execution-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.void-execution-stats>div{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:15px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012))}
+.void-execution-stats small{font-size:9px;letter-spacing:.12em;color:#888;font-weight:750}
+.void-execution-stats strong{font-size:clamp(24px,4vw,34px);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.void-execution-search{display:flex;align-items:flex-end;gap:10px;margin:14px 0 18px;flex-wrap:wrap}
+.void-execution-search .form-label{flex:1 1 240px;min-width:0;margin:0}
+.void-execution-search .button{white-space:nowrap}
+.void-execution-users{display:flex;flex-direction:column;gap:9px}
+.void-execution-user{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.018)}
+.void-execution-user>div{min-width:0;flex:1}
+.void-execution-user>div>strong{display:block;font-size:13px;overflow-wrap:anywhere}
+.void-execution-user>div>small{display:block;margin-top:4px;font-size:10px;color:#777}
+.void-execution-breakdown{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.void-execution-breakdown span{padding:5px 8px;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#aaa;font-size:10px;overflow-wrap:anywhere}
+.void-execution-breakdown b{color:#fff;margin-left:4px}
+.void-execution-count{white-space:nowrap;font-size:18px;font-variant-numeric:tabular-nums}
+.void-execution-count small{font-size:10px;color:#777;font-weight:500}
+.void-execution-disclaimer{margin:16px 0 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;line-height:1.6;color:#777}
+@media(max-width:600px){.void-execution-stats{grid-template-columns:1fr 1fr}.void-execution-search{align-items:stretch}.void-execution-search .form-label{flex-basis:100%}.void-execution-search .button{flex:1}.void-execution-user{gap:10px;padding:12px}.void-execution-count{font-size:16px}}
