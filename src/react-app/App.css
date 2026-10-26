@@ -765,3 +765,179 @@ img { height: auto; }
 .loader-output .button-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
 .loader-output .button-row .button{margin:0}
 @media(max-width:560px){.loader-output{padding:11px;border-radius:14px}.loader-output-heading{align-items:flex-start;font-size:9px;letter-spacing:.07em}.loader-output-heading .button{padding:7px 9px;font-size:10px}.loader-code{padding:10px;font-size:10px;line-height:1.7}}
+
+
+
+/* iOS-inspired liquid glass layer */
+:root {
+  --void-glass-bg: rgba(255,255,255,.055);
+  --void-glass-bg-strong: rgba(255,255,255,.085);
+  --void-glass-border: rgba(255,255,255,.15);
+  --void-glass-shine: rgba(255,255,255,.22);
+}
+.app {
+  background:
+    radial-gradient(ellipse at 8% -5%, rgba(255,255,255,.075), transparent 36%),
+    radial-gradient(ellipse at 92% 12%, rgba(130,150,255,.045), transparent 32%),
+    #070707;
+}
+.app:not(.dedicated-protector) > .topbar {
+  background: rgba(22,22,24,.62) !important;
+  border: 1px solid rgba(255,255,255,.13);
+  border-top-color: rgba(255,255,255,.2);
+  border-radius: 22px;
+  margin: 10px 14px;
+  padding-inline: 16px;
+  box-shadow: 0 12px 38px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.12);
+  -webkit-backdrop-filter: blur(32px) saturate(175%);
+  backdrop-filter: blur(32px) saturate(175%);
+}
+.app .panel,
+.app .card,
+.app .stat-card,
+.app .dashboard-card,
+.app .script-card,
+.app .settings-card,
+.app .profile-card,
+.app .admin-card,
+.app .modal,
+.app .sidebar,
+.app .nav-drawer,
+.app .drawer-panel,
+.app .dropdown-menu,
+.app .popover,
+.app .key-generation-card,
+.app .key-verify-card,
+.app .script-detail-sidebar,
+.app .script-detail-modal,
+.app .recent-protects-dropdown,
+.app .media-asset-card,
+.app .generated-key-row {
+  background: linear-gradient(145deg, rgba(255,255,255,.085), rgba(255,255,255,.025) 52%, rgba(255,255,255,.012)) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.095);
+  -webkit-backdrop-filter: blur(26px) saturate(165%);
+  backdrop-filter: blur(26px) saturate(165%);
+}
+.app .panel,
+.app .card,
+.app .stat-card,
+.app .dashboard-card,
+.app .script-card,
+.app .settings-card,
+.app .profile-card,
+.app .admin-card {
+  border-radius: 20px;
+}
+.app .button,
+.app button.button,
+.app a.button,
+.app .icon-button,
+.app .tab-button,
+.app .nav-item,
+.app .sidebar a,
+.app .sidebar button,
+.app .drawer-panel button {
+  transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.app .button,
+.app button.button,
+.app a.button {
+  border: 1px solid rgba(255,255,255,.2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 6px 20px rgba(0,0,0,.18);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+.app .button:hover:not(:disabled),
+.app button.button:hover:not(:disabled),
+.app a.button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.36);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 10px 26px rgba(0,0,0,.28);
+}
+.app input:not([type="checkbox"]):not([type="radio"]),
+.app select,
+.app textarea,
+.app .media-direct-url {
+  background: rgba(255,255,255,.045);
+  border-color: rgba(255,255,255,.13);
+  border-radius: 13px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+.app input:focus,
+.app select:focus,
+.app textarea:focus {
+  border-color: rgba(255,255,255,.4);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.055), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.app .icon,
+.app .icon-svg {
+  filter: drop-shadow(0 1px 5px rgba(255,255,255,.08));
+}
+.app .nav-item,
+.app .sidebar a,
+.app .sidebar button {
+  border: 1px solid transparent;
+  border-radius: 13px;
+}
+.app .nav-item:hover,
+.app .sidebar a:hover,
+.app .sidebar button:hover {
+  background: rgba(255,255,255,.075);
+  border-color: rgba(255,255,255,.1);
+}
+.app .nav-item.active,
+.app .nav-item[aria-current="page"],
+.app .sidebar .active {
+  background: linear-gradient(135deg, rgba(255,255,255,.15), rgba(255,255,255,.045));
+  border-color: rgba(255,255,255,.17);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 6px 18px rgba(0,0,0,.12);
+}
+.app .script-detail-backdrop {
+  background: rgba(0,0,0,.48);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+}
+.app .script-detail-modal {
+  background: linear-gradient(145deg, rgba(28,28,30,.9), rgba(8,8,9,.88)) !important;
+  -webkit-backdrop-filter: blur(34px) saturate(175%);
+  backdrop-filter: blur(34px) saturate(175%);
+}
+.app .loader-output,
+.app .script-detail-code,
+.app .code-key-box,
+.app .script-detail-showcase,
+.app .script-detail-empty-media {
+  background: rgba(255,255,255,.035);
+  border-color: rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(20px) saturate(145%);
+  backdrop-filter: blur(20px) saturate(145%);
+}
+@media (max-width: 640px) {
+  .app:not(.dedicated-protector) > .topbar {
+    margin: 7px 8px;
+    padding-inline: 10px;
+    border-radius: 18px;
+  }
+  .app .panel,
+  .app .card,
+  .app .stat-card,
+  .app .dashboard-card,
+  .app .script-card {
+    border-radius: 17px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app .button,
+  .app button.button,
+  .app a.button,
+  .app .icon-button,
+  .app .tab-button,
+  .app .nav-item,
+  .app .sidebar a,
+  .app .sidebar button {
+    transition: none;
+  }
+}
