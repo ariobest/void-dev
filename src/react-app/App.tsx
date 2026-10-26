@@ -331,8 +331,7 @@ function App() {
       setSession(nextSession); setUser(nextSession?.user||null);
       window.setTimeout(() => { void refreshProfile(nextSession?.user||null); },0);
     });
-    return (
-      <VoidHomeEnhancements />) => { mounted = false; subscription.unsubscribe(); };
+    return () => { mounted = false; subscription.unsubscribe(); };
   },[refreshProfile]);
 
   useEffect(() => {
