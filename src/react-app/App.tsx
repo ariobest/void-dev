@@ -3,6 +3,7 @@ import { createClient, type Session, type User } from "@supabase/supabase-js";
 import { scriptApiUrl, supabase, supabasePublicKey } from "./lib/supabase";
 import "./App.css";
 import "./VoidHomeEnhancements.css";
+import "./VoidHomeEnhancements.css";
 import VoidHomeEnhancements from "./VoidHomeEnhancements";
 
 const logo = "https://cqtwmxojwwyeasstuhgb.supabase.co/storage/v1/object/public/void-files/1792744606438-void-logo-icon.png";
