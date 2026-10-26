@@ -81,6 +81,35 @@ const protectionHeaders = {
 
 app.get("/api/", (c) => c.json({ name: "Void Development API", ok: true }));
 
+app.get("/api/track-execution", async (c) => {
+  const slug = (c.req.query("script") || "").trim().toLowerCase();
+  const username = (c.req.query("username") || "").trim();
+  if (!/^[a-z0-9-]{1,80}$/.test(slug) || !/^[A-Za-z0-9_]{1,32}$/.test(username)) {
+    return c.json({ error: "Invalid script or Roblox username." }, 400, {
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    });
+  }
+  try {
+    const url = new URL(SUPABASE_URL + "/functions/v1/script-api");
+    url.searchParams.set("action", "track-execution");
+    url.searchParams.set("script", slug);
+    url.searchParams.set("username", username);
+    const upstream = await fetch(url.toString(), { headers: { "Accept": "application/json" } });
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: {
+        "Content-Type": upstream.headers.get("Content-Type") || "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+      },
+    });
+  } catch {
+    return c.json({ error: "Execution tracking is temporarily unavailable." }, 502);
+  }
+});
+
 app.get("/api/media/:slug", async (c) => {
   const slug = (c.req.param("slug") || "").trim();
   if (!/^[a-z0-9-]{3,100}$/.test(slug)) return c.json({ error: "Invalid file link." }, 400);
