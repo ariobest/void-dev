@@ -1061,3 +1061,18 @@ img { height: auto; }
   .app .stat-card::after,
   .app .void-execution-user::after { display: none; }
 }
+
+
+/* Verified Roblox identity returned by the official username lookup. */
+.app .void-roblox-lookup {
+  display:flex; align-items:center; gap:12px; margin:14px 0; padding:13px 15px;
+  border:1px solid rgba(255,255,255,.17); border-radius:16px;
+  background:linear-gradient(120deg,rgba(255,255,255,.09),rgba(255,255,255,.025));
+  box-shadow:inset 0 1px rgba(255,255,255,.09),0 10px 30px rgba(0,0,0,.18);
+}
+.app .void-roblox-avatar { width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15); }
+.app .void-roblox-lookup > div { display:grid;gap:3px;min-width:0; }
+.app .void-roblox-lookup strong { overflow-wrap:anywhere; }
+.app .void-roblox-lookup small { color:var(--muted,#aaa);overflow-wrap:anywhere; }
+.app .void-roblox-verified { margin-left:auto;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#d7f8e4;border:1px solid rgba(114,220,157,.28);background:rgba(60,170,105,.12);border-radius:999px;padding:6px 9px; }
+@media(max-width:560px){.app .void-roblox-lookup{align-items:flex-start;flex-wrap:wrap}.app .void-roblox-verified{margin-left:50px}}
