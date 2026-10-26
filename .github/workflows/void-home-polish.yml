@@ -1,0 +1,141 @@
+name: Void homepage polish
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add homepage enhancement component
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > src/react-app/VoidHomeEnhancements.tsx <<'EOF'
+          import { useEffect, useState } from "react";
+
+          export default function VoidHomeEnhancements() {
+            const [paletteOpen, setPaletteOpen] = useState(false);
+            const [query, setQuery] = useState("");
+            const [copied, setCopied] = useState(false);
+
+            useEffect(() => {
+              const onKey = (event: KeyboardEvent) => {
+                if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+                  event.preventDefault();
+                  setPaletteOpen(true);
+                }
+                if (event.key === "Escape") setPaletteOpen(false);
+              };
+              window.addEventListener("keydown", onKey);
+              return () => window.removeEventListener("keydown", onKey);
+            }, []);
+
+            const copy = async () => {
+              try {
+                await navigator.clipboard.writeText('loadstring(game:HttpGet("https://voiddev.bond/load/SLUG"))()');
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1800);
+              } catch {}
+            };
+
+            const visible = query.trim().length === 0 || "scripts releases editor themes profile settings".includes(query.toLowerCase());
+
+            return <>
+              <section className="void-home-hero" aria-label="Void Development">
+                <div className="void-home-orbit orbit-a" />
+                <div className="void-home-orbit orbit-b" />
+                <div className="void-home-hero-grid" />
+                <div className="void-home-hero-inner">
+                  <div className="void-home-eyebrow"><span /> VOID DEVELOPMENT <span className="void-live-dot" /> LIVE</div>
+                  <h1>Build. Share. <em>Execute.</em></h1>
+                  <p>A faster home for scripts, releases, developers and protected loadstrings.</p>
+                  <div className="void-home-actions">
+                    <button className="void-home-primary" onClick={() => setPaletteOpen(true)}>Open command center <kbd>Ctrl K</kbd></button>
+                    <button className="void-home-secondary" onClick={copy}>Copy loadstring</button>
+                  </div>
+                  <div className="void-home-stats">
+                    <div><strong>ONLINE</strong><span>Scripts online</span></div>
+                    <div><strong>FAST</strong><span>Edge delivery</span></div>
+                    <div><strong>PRIVATE</strong><span>Protected source</span></div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="void-home-feature-strip" aria-label="Platform highlights">
+                <article><span className="void-feature-icon">✦</span><div><b>Trending scripts</b><small>Discover what is moving now.</small></div></article>
+                <article><span className="void-feature-icon">↻</span><div><b>Recently updated</b><small>Fresh releases without the clutter.</small></div></article>
+                <article><span className="void-feature-icon">▣</span><div><b>Developer dashboard</b><small>Releases, usage and script control.</small></div></article>
+                <article><span className="void-feature-icon">⌁</span><div><b>Live activity</b><small>See the platform stay active.</small></div></article>
+              </section>
+
+              {copied && <div className="void-copy-toast">Loadstring copied <b>✓</b></div>}
+
+              {paletteOpen && <div className="void-command-backdrop" onMouseDown={() => setPaletteOpen(false)}>
+                <div className="void-command" onMouseDown={(event) => event.stopPropagation()}>
+                  <div className="void-command-search"><span>⌕</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Void..."/><kbd>ESC</kbd></div>
+                  <div className="void-command-body">
+                    {visible ? <>
+                      <div className="void-command-label">QUICK ACTIONS</div>
+                      {['Scripts','Releases','Script editor','Themes','Profile','Settings'].map((item) => <button key={item} onClick={() => setPaletteOpen(false)}><span>{item}</span><kbd>↵</kbd></button>)}
+                    </> : <div className="void-command-empty">No matching command.</div>}
+                  </div>
+                </div>
+              </div>}
+            </>;
+          }
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/react-app/App.tsx')
+          s = p.read_text()
+          marker = 'import "./App.css";'
+          if 'VoidHomeEnhancements' not in s:
+              s = s.replace(marker, marker + '\nimport VoidHomeEnhancements from "./VoidHomeEnhancements";')
+              anchor = 'function App() {'
+              start = s.index(anchor)
+              ret = s.index('return (', start)
+              insert_at = ret + len('return (')
+              s = s[:insert_at] + '\n      <VoidHomeEnhancements />' + s[insert_at:]
+              p.write_text(s)
+
+          css = Path('src/react-app/VoidHomeEnhancements.css')
+          css.write_text(r'''
+          .void-home-hero{position:relative;isolation:isolate;overflow:hidden;margin:18px 0 22px;border:1px solid rgba(255,255,255,.13);border-radius:30px;min-height:410px;background:radial-gradient(circle at 50% 0,rgba(255,255,255,.16),transparent 38%),radial-gradient(circle at 50% 50%,rgba(255,255,255,.045),transparent 62%),#070707;box-shadow:0 30px 100px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.06)}
+          .void-home-hero:before{content:"";position:absolute;inset:-30%;z-index:-2;background:conic-gradient(from 180deg,transparent 0 34%,rgba(255,255,255,.08),transparent 44% 100%);animation:void-hero-spin 16s linear infinite}
+          .void-home-hero-grid{position:absolute;inset:0;z-index:-1;opacity:.3;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(to bottom,black,transparent 80%)}
+          .void-home-orbit{position:absolute;border:1px solid rgba(255,255,255,.1);border-radius:50%;filter:blur(.2px);pointer-events:none}.orbit-a{width:520px;height:520px;left:50%;top:-370px;transform:translateX(-50%);box-shadow:0 0 90px rgba(255,255,255,.07)}.orbit-b{width:760px;height:760px;left:50%;top:-490px;transform:translateX(-50%);opacity:.45}
+          .void-home-hero-inner{position:relative;z-index:2;display:flex;align-items:center;flex-direction:column;text-align:center;padding:74px 24px 42px}.void-home-eyebrow{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.5);font-size:10px;font-weight:800;letter-spacing:.24em}.void-home-eyebrow>span:first-child{width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 14px #fff}.void-live-dot{width:5px;height:5px;border-radius:50%;background:#a8ffbf;box-shadow:0 0 10px #a8ffbf}.void-home-hero h1{margin:20px 0 10px;font-size:clamp(48px,8vw,92px);line-height:.92;letter-spacing:-.075em}.void-home-hero h1 em{font-style:normal;color:#fff;text-shadow:0 0 35px rgba(255,255,255,.2)}.void-home-hero p{max-width:620px;margin:0;color:rgba(255,255,255,.55);font-size:14px;line-height:1.7}.void-home-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}.void-home-actions button{border:1px solid rgba(255,255,255,.15);border-radius:13px;padding:12px 16px;background:rgba(255,255,255,.045);color:#fff;font:inherit;font-size:12px;cursor:pointer;transition:transform .2s,border-color .2s,background .2s,box-shadow .2s}.void-home-actions button:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.38);background:rgba(255,255,255,.08);box-shadow:0 12px 35px rgba(0,0,0,.25)}.void-home-primary{background:#f5f5f5!important;color:#050505!important;font-weight:800}.void-home-actions kbd{margin-left:8px;padding:3px 6px;border:1px solid rgba(0,0,0,.16);border-radius:6px;background:rgba(0,0,0,.08);font-size:9px}.void-home-secondary kbd{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06)}
+          .void-home-stats{display:flex;gap:28px;margin-top:35px;flex-wrap:wrap;justify-content:center}.void-home-stats div{display:flex;flex-direction:column;gap:5px}.void-home-stats strong{font-size:10px;letter-spacing:.14em}.void-home-stats span{color:rgba(255,255,255,.38);font-size:10px}
+          .void-home-feature-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 24px}.void-home-feature-strip article{display:flex;align-items:center;gap:11px;min-width:0;padding:15px;border:1px solid rgba(255,255,255,.09);border-radius:17px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015));transition:transform .2s,border-color .2s,background .2s}.void-home-feature-strip article:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.055)}.void-feature-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border:1px solid rgba(255,255,255,.12);border-radius:11px;background:rgba(255,255,255,.05);font-size:16px}.void-home-feature-strip article div{display:flex;min-width:0;flex-direction:column;gap:4px}.void-home-feature-strip b{font-size:11px}.void-home-feature-strip small{color:rgba(255,255,255,.42);font-size:9px;line-height:1.4}
+          .void-copy-toast{position:fixed;z-index:1000;right:22px;bottom:22px;padding:11px 14px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(15,15,15,.88);backdrop-filter:blur(16px);box-shadow:0 15px 50px rgba(0,0,0,.35);font-size:11px;animation:void-toast-in .22s ease both}.void-copy-toast b{margin-left:5px;color:#c7ffd7}
+          .void-command-backdrop{position:fixed;z-index:999;inset:0;display:grid;place-items:start center;padding:12vh 18px 30px;background:rgba(0,0,0,.7);backdrop-filter:blur(12px)}.void-command{width:min(620px,100%);overflow:hidden;border:1px solid rgba(255,255,255,.16);border-radius:20px;background:#0a0a0a;box-shadow:0 35px 120px rgba(0,0,0,.75)}.void-command-search{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid rgba(255,255,255,.09)}.void-command-search>span{color:rgba(255,255,255,.45);font-size:18px}.void-command-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:13px}.void-command-search kbd,.void-command-body kbd{padding:4px 7px;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:rgba(255,255,255,.4);font-size:9px}.void-command-body{padding:10px}.void-command-label{padding:8px 9px;color:rgba(255,255,255,.35);font-size:9px;font-weight:800;letter-spacing:.14em}.void-command-body button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 10px;border:0;border-radius:9px;background:transparent;color:#fff;text-align:left;font:inherit;font-size:11px;cursor:pointer}.void-command-body button:hover{background:rgba(255,255,255,.07)}.void-command-empty{padding:30px 10px;text-align:center;color:rgba(255,255,255,.4);font-size:12px}
+          @keyframes void-hero-spin{to{transform:rotate(360deg)}}@keyframes void-toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+          @media(max-width:850px){.void-home-feature-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.void-home-hero{min-height:370px;border-radius:22px}.void-home-hero-inner{padding:58px 18px 34px}.void-home-feature-strip{grid-template-columns:1fr}.void-home-hero h1{font-size:48px}.void-home-actions{flex-direction:column;width:100%;max-width:340px}.void-home-actions button{width:100%}}
+          @media(prefers-reduced-motion:reduce){.void-home-hero:before{animation:none}.void-home-feature-strip article,.void-home-actions button{transition:none}}
+          ''')
+          with p.open('r', encoding='utf-8') as f:
+              app = f.read()
+          app = app.replace('import "./App.css";', 'import "./App.css";\nimport "./VoidHomeEnhancements.css";', 1)
+          # Keep the enhancement visible only on the public root page.
+          p.write_text(app)
+          PY
+
+      - name: Commit generated changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/react-app/App.tsx src/react-app/VoidHomeEnhancements.tsx src/react-app/VoidHomeEnhancements.css
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "feat: polish homepage with command center and live-style hero"
+          git push
