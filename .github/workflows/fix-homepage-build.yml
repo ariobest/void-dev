@@ -1,0 +1,149 @@
+name: Fix Homepage Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Repair App.tsx
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("src/react-app/App.tsx")
+
+          if not path.exists():
+              raise SystemExit("App.tsx was not found")
+
+          text = path.read_text(encoding="utf-8")
+
+          # Fix the broken useEffect cleanup caused by the previous homepage commit.
+          broken = """    return (
+      <VoidHomeEnhancements />) => { mounted=false; subscription.unsubscribe(); };"""
+
+          fixed = """    return () => { mounted=false; subscription.unsubscribe(); };"""
+
+          if broken in text:
+              text = text.replace(broken, fixed, 1)
+              print("Fixed malformed useEffect cleanup.")
+          else:
+              # Handle whitespace variations of the same mistake.
+              pattern = (
+                  r'    return \(\s*'
+                  r'<VoidHomeEnhancements\s*/>\)\s*=>\s*'
+                  r'\{\s*mounted=false;\s*subscription\.unsubscribe\(\);\s*\};'
+              )
+
+              new_text, count = re.subn(
+                  pattern,
+                  fixed,
+                  text,
+                  count=1
+              )
+
+              if count:
+                  text = new_text
+                  print("Fixed malformed useEffect cleanup with regex.")
+              else:
+                  print("Malformed cleanup was already fixed or was not found.")
+
+          # Make sure the component import exists.
+          import_line = 'import VoidHomeEnhancements from "./VoidHomeEnhancements";'
+
+          if import_line not in text:
+              marker = 'import "./App.css";'
+
+              if marker not in text:
+                  raise SystemExit("Could not find App.css import.")
+
+              text = text.replace(
+                  marker,
+                  marker + "\n" + import_line,
+                  1
+              )
+
+              print("Added VoidHomeEnhancements import.")
+
+          # Find the actual App component return.
+          app_start = text.find("function App() {")
+
+          if app_start == -1:
+              raise SystemExit("Could not find function App().")
+
+          app_return = text.rfind("\n  return (", app_start)
+
+          if app_return == -1:
+              raise SystemExit("Could not find App component return.")
+
+          # Only inspect the actual App return, not the useEffect above it.
+          return_end = min(len(text), app_return + 3000)
+          app_return_section = text[app_return:return_end]
+
+          if "<VoidHomeEnhancements />" not in app_return_section:
+              insertion = "\n    <VoidHomeEnhancements />"
+
+              position = app_return + len("\n  return (")
+
+              text = (
+                  text[:position]
+                  + insertion
+                  + text[position:]
+              )
+
+              print("Inserted VoidHomeEnhancements into App return.")
+          else:
+              print("VoidHomeEnhancements is already in App return.")
+
+          path.write_text(text, encoding="utf-8")
+
+          print("App.tsx repair complete.")
+          PY
+
+      - name: Remove broken homepage workflow
+        shell: bash
+        run: |
+          if [ -f ".github/workflows/void-home-polish.yml" ]; then
+            rm ".github/workflows/void-home-polish.yml"
+            echo "Removed broken homepage workflow."
+          else
+            echo "Broken homepage workflow already removed."
+          fi
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          set -e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add src/react-app/App.tsx
+
+          if [ -f ".github/workflows/void-home-polish.yml" ]; then
+            git add -u .github/workflows/void-home-polish.yml
+          fi
+
+          if git diff --cached --quiet; then
+            echo "Nothing to fix."
+            exit 0
+          fi
+
+          git commit -m "fix: repair homepage build integration"
+          git push origin main
