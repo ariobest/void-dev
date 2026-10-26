@@ -713,3 +713,19 @@ img { height: auto; }
 .chatgpt-generated-image>span{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;background:#ffffff08;color:#eee;font-size:11px}
 .chatgpt-generated-image:hover>span{background:#ffffff12}
 @media(max-width:680px){.chatgpt-tool-button{flex-basis:32px;width:32px;height:34px;border-radius:10px}.chatgpt-pending-attachments,.chatgpt-attachment-list{gap:6px;padding:8px}.chatgpt-attachment-chip{font-size:9px}.chatgpt-generated-image img{max-height:420px}}
+
+
+/* Keep the main navigation visible while scrolling without covering page content. */
+.app:not(.dedicated-protector) > .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  isolation: isolate;
+  background: rgba(7, 7, 7, .88);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+  border-bottom: 1px solid rgba(255, 255, 255, .09);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app:not(.dedicated-protector) > .topbar { scroll-margin-top: 0; }
+}
