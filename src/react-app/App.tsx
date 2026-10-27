@@ -18,6 +18,7 @@ import "./VoidHomeEnhancements.css";
 import "./VoidHomeEnhancements.css";
 import "./VoidHomeEnhancements.css";
 import "./VoidHomeEnhancements.css";
+import "./VoidHomeEnhancements.css";
 
 const logo = "https://cqtwmxojwwyeasstuhgb.supabase.co/storage/v1/object/public/void-files/1792744606438-void-logo-icon.png";
 const themes = [
