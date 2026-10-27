@@ -251,6 +251,8 @@ function App() {
   const [editorCode,setEditorCode] = useState("-- Void Development Lua editor\n-- Write or paste your Lua code here.\n\nprint(\"Welcome to Void Development\")");
   const [editorName,setEditorName] = useState("Untitled.lua");
   const [notice,setNotice] = useState("");
+  const [voidTipOpen,setVoidTipOpen] = useState(false);
+  const [voidTipIndex,setVoidTipIndex] = useState(0);
   const [keyValue,setKeyValue] = useState("");
   const [keyResult,setKeyResult] = useState("");
   const [keyRecords,setKeyRecords] = useState<Array<Record<string,unknown>>>([]);
@@ -483,6 +485,15 @@ function App() {
   },[otpCooldown>0]);
   useEffect(() => { void refreshRoadmap(); },[refreshRoadmap]);
   useEffect(() => { if (active==="Home"||active==="Scripts"||active==="Releases") void trackEvent(active==="Scripts"?"script_view":active==="Releases"?"release_view":"page_view","/"+slugify(active)); },[active,trackEvent]);
+  useEffect(() => {
+    if (active !== "Home" || isDedicatedProtector) { setVoidTipOpen(false); return; }
+    try { if (sessionStorage.getItem("void-welcome-pulse-seen") === "1") return; } catch {}
+    const timer = window.setTimeout(() => {
+      setVoidTipOpen(true);
+      try { sessionStorage.setItem("void-welcome-pulse-seen","1"); } catch {}
+    }, 9000);
+    return () => window.clearTimeout(timer);
+  },[active,isDedicatedProtector]);
   useEffect(() => { if(active==="Admin panel"&&isAdmin&&adminTab==="Overview") void loadExecutionStats(""); },[active,isAdmin,adminTab]);
   useEffect(() => {
     let mounted=true;
@@ -1141,6 +1152,7 @@ function App() {
         </section>
       </div>}
 
+      {voidTipOpen&&active==="Home"&&!cookieCustomize&&cookiePrefs!==null&&<aside className="void-pulse-popup" role="dialog" aria-label="Void quick tip"><div className="void-pulse-top"><span className="void-pulse-signal"><i/> VOID SIGNAL</span><button type="button" className="icon-button" onClick={()=>setVoidTipOpen(false)} aria-label="Close quick tip"><Icon name="close"/></button></div><div className="void-pulse-mark"><Icon name={voidTipIndex===0?"scripts":voidTipIndex===1?"keys":"palette"}/></div><span className="section-kicker">QUICK DISCOVERY · 0{voidTipIndex+1}</span><h3>{["Find your next release","One key, verified server-side","Make the workspace yours"][voidTipIndex]}</h3><p>{["Browse published scripts and open a card to see release status, details, and showcase links.","The key system checks keys through the connected API. Keep validation on the server for protected actions.","Choose a dark theme and tune the look of your Void workspace from the Themes tab."][voidTipIndex]}</p><div className="void-pulse-actions"><button type="button" className="button button-light" onClick={()=>{setVoidTipOpen(false);setPage(["Scripts","Key system","Themes"][voidTipIndex]);}}>Explore <Icon name="arrow"/></button><button type="button" className="button button-ghost" onClick={()=>setVoidTipIndex(i=>(i+1)%3)}>Next tip <Icon name="refresh"/></button></div><div className="void-pulse-dots"><i className={voidTipIndex===0?"active":""}/><i className={voidTipIndex===1?"active":""}/><i className={voidTipIndex===2?"active":""}/></div></aside>}
       {cookiePrefs===null&&<div className="cookie-backdrop"><section className="cookie-card" role="dialog" aria-modal="true" aria-labelledby="cookie-title"><div className="cookie-brand"><span className="cookie-icon"><Icon name="shield"/></span><span className="section-kicker">YOUR PRIVACY MATTERS</span></div><h2 id="cookie-title">Your data. Your call.</h2><p>Void Development uses essential storage to keep sign-in and security features working. Optional analytics help us understand visits and improve the workspace. We only record analytics after you opt in.</p><div className="cookie-choice"><span><strong>Essential</strong><small>Authentication and security · always on</small></span><span className="cookie-required">REQUIRED</span></div>{cookieCustomize&&<><label className="setting-row"><span><strong>Analytics cookies</strong><small>Allow anonymous visit counts and page events</small></span><input type="checkbox" checked={cookieAnalytics} onChange={e=>setCookieAnalytics(e.target.checked)}/></label><label className="setting-row"><span><strong>Personalization</strong><small>Remember theme and workspace preferences</small></span><input type="checkbox" checked={cookiePersonalization} onChange={e=>setCookiePersonalization(e.target.checked)}/></label></>}<button className="button button-light cookie-main" onClick={()=>chooseCookies(true,true)}>Accept all cookies <Icon name="arrow"/></button><div className="cookie-actions"><button className="button button-ghost" onClick={()=>chooseCookies(false,true)}>Essential only</button><button className="text-button" onClick={()=>cookieCustomize?chooseCookies(cookieAnalytics,cookiePersonalization):(setCookieCustomize(true),setCookieNotice(""))}>{cookieCustomize?"Save choices":"Customize"}</button></div><small className="cookie-footnote">You can change your choices anytime in Settings → Privacy choices.</small></section></div>}
       {cookiePrefs!==null&&cookieCustomize&&<div className="cookie-backdrop"><section className="cookie-card cookie-card-compact" role="dialog" aria-modal="true"><button className="cookie-close icon-button" onClick={()=>setCookieCustomize(false)} aria-label="Close cookie settings"><Icon name="close"/></button><span className="section-kicker">COOKIE PREFERENCES</span><h2>Privacy settings</h2><div className="cookie-choice"><span><strong>Essential</strong><small>Authentication and security</small></span><span className="cookie-required">REQUIRED</span></div><label className="setting-row"><span><strong>Analytics</strong><small>Anonymous page views and visits</small></span><input type="checkbox" checked={cookieAnalytics} onChange={e=>setCookieAnalytics(e.target.checked)}/></label><label className="setting-row"><span><strong>Personalization</strong><small>Remember theme choices</small></span><input type="checkbox" checked={cookiePersonalization} onChange={e=>setCookiePersonalization(e.target.checked)}/></label><button className="button button-light cookie-main" onClick={()=>chooseCookies(cookieAnalytics,cookiePersonalization)}>Save preferences</button>{cookieNotice&&<p className="inline-notice">{cookieNotice}</p>}</section></div>}
     </div>
