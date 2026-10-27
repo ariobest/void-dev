@@ -1145,3 +1145,28 @@ img { height: auto; }
 .key-layout .muted,.key-layout .form-label small{color:var(--flow-muted,#94a3b8)}
 .key-layout .button-light{background:var(--flow-button,#3b82f6);color:var(--flow-button-text,#fff);border-color:transparent}
 .key-layout .key-result,.key-layout .created-key{border-color:var(--flow-border,#334155)}
+
+/* Extended key-page theme controls */
+.key-layout{position:relative;isolation:isolate;transition:background .25s ease,border-radius .25s ease}
+.key-layout:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;opacity:.13;background-image:linear-gradient(rgba(255,255,255,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.18) 1px,transparent 1px);background-size:28px 28px;display:none}
+.key-layout[style*="--flow-glow: 1"]:has(.key-hero) .key-hero{box-shadow:0 18px 60px color-mix(in srgb,var(--flow-accent) 12%,transparent)}
+.key-layout .panel{backdrop-filter:blur(var(--flow-blur,18px));border-radius:var(--flow-radius,22px);color:var(--flow-text,#f8fafc)}
+.key-layout .panel h2{letter-spacing:-.035em}
+.key-layout .form-label{color:var(--flow-text,#f8fafc)}
+.key-layout .form-label input{border-color:var(--flow-border,#334155);border-radius:calc(var(--flow-button-radius,14px) * .75);background:color-mix(in srgb,var(--flow-card,#0f172a) 85%,transparent);color:var(--flow-text,#f8fafc)}
+.key-layout .button-light{border-radius:var(--flow-button-radius,14px)}
+.key-layout.key-flow-solid-card .panel{background:var(--flow-card,#0f172a)!important}
+.key-layout.key-flow-minimal .panel{background:transparent!important;box-shadow:none!important;border-color:transparent}
+.key-layout.key-flow-bordered .panel{background:color-mix(in srgb,var(--flow-card,#0f172a) 75%,transparent)!important;border-width:2px}
+.key-layout.key-flow-glass .panel{background:color-mix(in srgb,var(--flow-card,#0f172a) 78%,transparent)!important;backdrop-filter:blur(var(--flow-blur,18px))}
+.key-layout .key-button-pill .button-light,.key-layout .key-button-pill button.button-light{border-radius:999px!important}
+.key-layout .key-button-minimal .button-light{background:transparent!important;color:var(--flow-button)!important;border-bottom:1px solid var(--flow-button)!important;box-shadow:none!important}
+.key-flow-preview{background-size:cover;background-position:center}
+.key-flow-preview:has(.key-preview-button-glass){backdrop-filter:blur(16px)}
+.key-flow-preview-button{transition:transform .2s ease,box-shadow .2s ease}
+.key-flow-preview button:hover{transform:translateY(-2px)}
+.key-theme-option-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.key-theme-option-grid input[type=range]{width:100%;accent-color:var(--flow-accent)}
+.key-flow-controls textarea{min-height:76px;resize:vertical}
+.key-flow-controls input:not([type=color]):not([type=range]),.key-flow-controls textarea,.key-flow-controls select{width:100%;box-sizing:border-box}
+@media(max-width:760px){.key-theme-option-grid{grid-template-columns:1fr}.key-layout{padding:12px!important}.key-layout .panel{min-width:0}}
