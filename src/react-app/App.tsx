@@ -216,13 +216,14 @@ function App() {
   const [themeId,setThemeId] = useState(() => { try { return localStorage.getItem("void-theme") || "spotlight"; } catch { return "spotlight"; } });
   const [accent,setAccent] = useState(() => { try { return localStorage.getItem("void-accent") || "#f5f5f5"; } catch { return "#f5f5f5"; } });
   const isDedicatedProtector = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/protected";
+  const isDedicatedKeySystem = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/keys";
   const isDedicatedFiles = typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/files";
   const isDedicatedChatGPT = typeof window !== "undefined" && ["/admin/chatgpt","/admin/claude"].includes(window.location.pathname.replace(/\/+$/, ""));
   const publicMediaMatch = typeof window !== "undefined" ? window.location.pathname.match(/^\/media\/([a-z0-9-]{3,100})\/?$/) : null;
   const isPublicMediaPage = Boolean(publicMediaMatch);
   const publicMediaSlug = publicMediaMatch?.[1] || "";
   const isBrowserProtectionUrl = typeof window !== "undefined" && /^\/(?:protected-load|load)\/[^/]+\/?$/.test(window.location.pathname);
-  const [active,setActive] = useState(() => isDedicatedProtector ? "Admin panel" : "Home");
+  const [active,setActive] = useState(() => isDedicatedProtector ? "Admin panel" : isDedicatedKeySystem ? "Key system" : "Home");
   const [adminTab,setAdminTab] = useState(() => isDedicatedProtector ? "Add scripts" : "Overview");
   const [navOpen,setNavOpen] = useState(false);
   const [session,setSession] = useState<Session|null>(null);
@@ -389,7 +390,14 @@ function App() {
     };
   }, []);
 
-  const setPage = (page:string) => { setActive(page); setNavOpen(false); setNotice(""); };
+  const setPage = (page:string) => {
+    if (typeof window !== "undefined") {
+      const currentPath = window.location.pathname.replace(/\/+$/, "") || "/";
+      if (page === "Key system" && currentPath !== "/keys") window.history.pushState({voidPage:page},"", "/keys");
+      else if (page !== "Key system" && currentPath === "/keys") window.history.pushState({voidPage:page},"", "/");
+    }
+    setActive(page); setNavOpen(false); setNotice("");
+  };
   const apiCall = useCallback(async <T,>(action:string,body?:Record<string,unknown>):Promise<T> => {
     const token = session?.access_token;
     const response = await fetch(scriptApiUrl,{method:"POST",headers:{"Content-Type":"application/json","apikey":supabasePublicKey,...(token?{Authorization:"Bearer "+token}:{})},body:JSON.stringify({action,...(body||{})})});
@@ -474,6 +482,15 @@ function App() {
     return () => { cancelled=true; };
   },[isDedicatedFiles,user?.id,isAdmin,apiCall]);
 
+  useEffect(() => {
+    const syncRoute = () => {
+      const path = window.location.pathname.replace(/\/+$/, "") || "/";
+      if (path === "/keys") { setActive("Key system"); setNavOpen(false); }
+      else if (path === "/" && active === "Key system") setActive("Home");
+    };
+    window.addEventListener("popstate", syncRoute);
+    return () => window.removeEventListener("popstate", syncRoute);
+  },[active]);
   useEffect(() => { void refreshScripts(); },[refreshScripts]);
   useEffect(() => {
     const slug = new URLSearchParams(window.location.search).get("script");
