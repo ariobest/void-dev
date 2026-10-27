@@ -1256,8 +1256,9 @@ img { height: auto; }
   animation:void-network-drift 32s ease-in-out infinite alternate;
   mask-image:linear-gradient(to bottom,rgba(0,0,0,.82),rgba(0,0,0,.32) 72%,rgba(0,0,0,.6));
 }
-.app > *{position:relative;z-index:1}
+.app > .topbar,.app > .main-shell{position:relative;z-index:1}
 .app .ambient{z-index:0;pointer-events:none}
+.app > .nav-scrim,.app > .nav-drawer,.app > .script-detail-backdrop,.app > .cookie-backdrop,.app > .chatgpt-floating-trigger,.app > .void-pulse-popup{z-index:120}
 @keyframes void-network-drift{from{transform:scale(1);filter:brightness(.78)}to{transform:scale(1.035);filter:brightness(1.12)}}
 
 /* Reworked countdown chamber: luminous ring, clearer progress, better small-screen layout */
