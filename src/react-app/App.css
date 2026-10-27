@@ -1215,3 +1215,26 @@ img { height: auto; }
 .key-flow-section-anchor{scroll-margin-top:24px}
 @media(max-width:900px){.key-flow-layout{grid-template-columns:minmax(0,1fr)}.key-flow-preview-wrap{position:static;order:-1}.key-flow-preview{min-height:280px}.key-flow-controls{padding:14px}.key-flow-toolbar{flex-direction:column}.key-flow-toolbar>div:last-child{justify-content:flex-start}}
 @media(max-width:520px){.key-flow-category-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.key-flow-category-list button{min-width:0}.key-flow-preview{padding:12px;min-height:250px}.key-flow-preview-card{padding:18px}.key-flow-toolbar>div:last-child .button{font-size:.72rem;padding:8px}}
+
+
+/* Dedicated near-black navigation treatment for Key System */
+.nav-drawer .drawer-links .drawer-link.key-system-nav,
+.nav-drawer .drawer-links .drawer-link.key-system-nav:hover,
+.nav-drawer .drawer-links .drawer-link.key-system-nav:focus-visible{
+  color:#f8fafc;
+  background:#050505;
+  border:1px solid #242424;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 5px 18px rgba(0,0,0,.24);
+}
+.nav-drawer .drawer-links .drawer-link.key-system-nav svg{
+  color:#f4f4f5;
+  filter:none;
+}
+.nav-drawer .drawer-links .drawer-link.key-system-nav.selected,
+.nav-drawer .drawer-links .drawer-link.key-system-nav.selected:hover{
+  color:#fff;
+  background:#000;
+  border-color:#3b3b3b;
+  box-shadow:inset 3px 0 0 #f4f4f5,0 8px 22px rgba(0,0,0,.3);
+}
+.nav-drawer .drawer-links .drawer-link.key-system-nav.selected svg{color:#fff}
