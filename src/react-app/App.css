@@ -1289,3 +1289,31 @@ img { height: auto; }
   .void-countdown strong{font-size:32px}
 }
 @media(prefers-reduced-motion:reduce){.app::before{animation:none}.void-core-active::before{animation:none}}
+
+
+/* Small, dismissible discovery popup */
+.void-pulse-popup{
+  position:fixed;z-index:120;right:clamp(14px,3vw,34px);bottom:clamp(14px,3vw,30px);
+  width:min(360px,calc(100vw - 28px));padding:18px;
+  border:1px solid rgba(255,255,255,.15);border-radius:22px;
+  color:#f8fafc;background:linear-gradient(145deg,rgba(22,22,24,.96),rgba(5,5,6,.97));
+  box-shadow:0 24px 90px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.055);
+  backdrop-filter:blur(24px);animation:void-popup-in .45s cubic-bezier(.2,.8,.2,1) both;
+}
+.void-pulse-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.void-pulse-signal{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.17em;color:#d4d4d8;font-weight:800}
+.void-pulse-signal i{width:6px;height:6px;border-radius:50%;background:#f5f5f5;box-shadow:0 0 12px rgba(255,255,255,.8);animation:void-signal-blink 1.8s ease-in-out infinite}
+.void-pulse-mark{display:grid;place-items:center;width:42px;height:42px;margin:12px 0;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.025));box-shadow:0 0 24px rgba(255,255,255,.04)}
+.void-pulse-mark .icon{width:20px;height:20px}
+.void-pulse-popup .section-kicker{font-size:9px;letter-spacing:.14em;color:rgba(255,255,255,.52)}
+.void-pulse-popup h3{margin:8px 0;font-size:20px;line-height:1.2;letter-spacing:-.045em}
+.void-pulse-popup p{margin:0;color:rgba(255,255,255,.63);font-size:12px;line-height:1.7}
+.void-pulse-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.void-pulse-actions .button{min-height:38px;font-size:11px}
+.void-pulse-dots{display:flex;gap:5px;margin-top:15px}
+.void-pulse-dots i{width:15px;height:3px;border-radius:99px;background:rgba(255,255,255,.16);transition:background .2s,width .2s}
+.void-pulse-dots i.active{width:25px;background:#f5f5f5}
+@keyframes void-popup-in{from{opacity:0;transform:translateY(18px) scale(.97);filter:blur(8px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes void-signal-blink{0%,100%{opacity:.6;box-shadow:0 0 5px rgba(255,255,255,.4)}50%{opacity:1;box-shadow:0 0 14px rgba(255,255,255,.95)}}
+@media(max-width:520px){.void-pulse-popup{right:10px;bottom:10px;width:calc(100vw - 20px);padding:15px;border-radius:18px}.void-pulse-popup h3{font-size:18px}.void-pulse-actions .button{flex:1;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.void-pulse-popup,.void-pulse-signal i{animation:none}}
