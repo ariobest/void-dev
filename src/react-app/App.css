@@ -1170,3 +1170,5 @@ img { height: auto; }
 .key-flow-controls textarea{min-height:76px;resize:vertical}
 .key-flow-controls input:not([type=color]):not([type=range]),.key-flow-controls textarea,.key-flow-controls select{width:100%;box-sizing:border-box}
 @media(max-width:760px){.key-theme-option-grid{grid-template-columns:1fr}.key-layout{padding:12px!important}.key-layout .panel{min-width:0}}
+
+.key-layout:before{display:var(--flow-grid,0)}
