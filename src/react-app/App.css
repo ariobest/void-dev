@@ -1172,3 +1172,5 @@ img { height: auto; }
 @media(max-width:760px){.key-theme-option-grid{grid-template-columns:1fr}.key-layout{padding:12px!important}.key-layout .panel{min-width:0}}
 
 .key-layout:before{display:var(--flow-grid,0)}
+
+.key-layout[style*="--flow-grid: 1"]:before{display:block}
