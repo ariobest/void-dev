@@ -1,28 +1,121 @@
-/* Void Development — frosted glass UI + expressive navigation motion */
-.app:not(.dedicated-protector){--void-glass-border:rgba(255,255,255,.13)}
-.app:not(.dedicated-protector)::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(circle at 15% 5%,rgba(255,255,255,.07),transparent 28%),radial-gradient(circle at 85% 18%,rgba(120,150,255,.055),transparent 25%),radial-gradient(circle at 50% 100%,rgba(255,255,255,.035),transparent 34%)}
-.app:not(.dedicated-protector)>.topbar,.app:not(.dedicated-protector) .sidebar,.app:not(.dedicated-protector) .nav-drawer,.app:not(.dedicated-protector) .drawer-panel,.app:not(.dedicated-protector) .panel,.app:not(.dedicated-protector) .settings-panel,.app:not(.dedicated-protector) .script-card,.app:not(.dedicated-protector) .release-card,.app:not(.dedicated-protector) .profile-card,.app:not(.dedicated-protector) .admin-card,.app:not(.dedicated-protector) .modal,.app:not(.dedicated-protector) .dropdown-menu,.app:not(.dedicated-protector) .popover,.app:not(.dedicated-protector) .key-generation-card,.app:not(.dedicated-protector) .key-verify-card,.app:not(.dedicated-protector) .media-asset-card{background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.025) 55%,rgba(255,255,255,.012)) !important;border-color:var(--void-glass-border) !important;box-shadow:0 18px 55px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.08);-webkit-backdrop-filter:blur(22px) saturate(145%);backdrop-filter:blur(22px) saturate(145%)}
-.app:not(.dedicated-protector)>.topbar{background:linear-gradient(120deg,rgba(30,30,34,.62),rgba(255,255,255,.07) 48%,rgba(18,18,22,.56)) !important;box-shadow:0 16px 55px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.12)}
-.app:not(.dedicated-protector) .nav-item,.app:not(.dedicated-protector) .sidebar a,.app:not(.dedicated-protector) .sidebar button{position:relative;overflow:visible;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.035);-webkit-backdrop-filter:blur(14px) saturate(130%);backdrop-filter:blur(14px) saturate(130%)}
-.app:not(.dedicated-protector) .nav-item:hover,.app:not(.dedicated-protector) .sidebar a:hover,.app:not(.dedicated-protector) .sidebar button:hover{background:linear-gradient(135deg,rgba(255,255,255,.105),rgba(255,255,255,.035));border-color:rgba(255,255,255,.18);box-shadow:0 10px 28px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.1)}
-.app:not(.dedicated-protector) .nav-item .icon-svg,.app:not(.dedicated-protector) .sidebar a .icon-svg,.app:not(.dedicated-protector) .sidebar button .icon-svg{transform-origin:50% 50%;transition:transform .24s cubic-bezier(.2,.8,.2,1),filter .24s ease;will-change:transform}
-.app:not(.dedicated-protector) .nav-item:nth-child(1):hover .icon-svg{transform:translateY(-4px) scale(1.08)}
-.app:not(.dedicated-protector) .nav-item:nth-child(2):hover .icon-svg{transform:rotate(-7deg) translateY(-2px)}
-.app:not(.dedicated-protector) .nav-item:nth-child(3):hover .icon-svg{transform:translateY(3px) scaleY(.9)}
-.app:not(.dedicated-protector) .nav-item:nth-child(4):hover .icon-svg{transform:rotate(14deg) scale(1.12)}
-.app:not(.dedicated-protector) .nav-item:nth-child(5):hover .icon-svg{transform:translateX(3px) rotate(-6deg)}
-.app:not(.dedicated-protector) .nav-item:nth-child(6):hover .icon-svg{transform:rotate(-18deg) scale(1.06)}
-.app:not(.dedicated-protector) .nav-item:nth-child(7):hover .icon-svg{transform:translateX(4px) rotate(7deg)}
-.app:not(.dedicated-protector) .nav-item:nth-child(8):hover .icon-svg{transform:rotate(-22deg)}
-.app:not(.dedicated-protector) .nav-item:nth-child(9):hover .icon-svg{transform:scale(1.13) translateY(-1px)}
-.app:not(.dedicated-protector) .nav-item:nth-child(10):hover .icon-svg{animation:void-bell .42s ease-in-out both}
-.app:not(.dedicated-protector) .nav-item:nth-child(11):hover .icon-svg{transform:translateY(-3px) scaleX(1.08)}
-.app:not(.dedicated-protector) .nav-item:nth-child(12):hover .icon-svg{transform:rotate(16deg)}
-.app:not(.dedicated-protector) .nav-item:nth-child(13):hover .icon-svg{transform:translateY(-4px) rotate(5deg)}
-.app:not(.dedicated-protector) .nav-item:nth-child(14):hover .icon-svg{transform:translateY(-3px) scale(1.06)}
-.app:not(.dedicated-protector) .nav-item:nth-child(15):hover .icon-svg{transform:rotate(-10deg) translateY(-1px)}
-.app:not(.dedicated-protector) .nav-item:nth-child(16):hover .icon-svg{transform:rotate(55deg) scale(1.05)}
-.app:not(.dedicated-protector) .nav-item:nth-child(17):hover .icon-svg{transform:translateY(-3px) rotate(4deg) scale(1.08)}
-.app:not(.dedicated-protector) .nav-item:hover .icon-svg,.app:not(.dedicated-protector) .sidebar a:hover .icon-svg,.app:not(.dedicated-protector) .sidebar button:hover .icon-svg{filter:drop-shadow(0 0 9px rgba(255,255,255,.24))}
-@keyframes void-bell{0%,100%{transform:rotate(0)}20%{transform:rotate(10deg)}40%{transform:rotate(-10deg)}60%{transform:rotate(7deg)}80%{transform:rotate(-4deg)}}
-@media(prefers-reduced-motion:reduce){.app:not(.dedicated-protector) .nav-item .icon-svg,.app:not(.dedicated-protector) .sidebar a .icon-svg,.app:not(.dedicated-protector) .sidebar button .icon-svg{transition:none}.app:not(.dedicated-protector) .nav-item:hover .icon-svg{animation:none!important}}
+/* Void Development — smooth frosted glass, tactile interactions, and accessible motion */
+.app:not(.dedicated-protector) {
+  --void-glass-border: rgba(255,255,255,.13);
+  --void-ease: cubic-bezier(.22,1,.36,1);
+  --void-fast: 180ms;
+  --void-smooth: 320ms;
+}
+.app:not(.dedicated-protector)::before {
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:-1;
+  background:radial-gradient(circle at 15% 5%,rgba(255,255,255,.07),transparent 28%),
+    radial-gradient(circle at 85% 18%,rgba(120,150,255,.055),transparent 25%),
+    radial-gradient(circle at 50% 100%,rgba(255,255,255,.035),transparent 34%);
+}
+.app:not(.dedicated-protector)>.topbar,
+.app:not(.dedicated-protector) .sidebar,
+.app:not(.dedicated-protector) .nav-drawer,
+.app:not(.dedicated-protector) .drawer-panel,
+.app:not(.dedicated-protector) .panel,
+.app:not(.dedicated-protector) .settings-panel,
+.app:not(.dedicated-protector) .script-card,
+.app:not(.dedicated-protector) .release-card,
+.app:not(.dedicated-protector) .profile-card,
+.app:not(.dedicated-protector) .admin-card,
+.app:not(.dedicated-protector) .modal,
+.app:not(.dedicated-protector) .dropdown-menu,
+.app:not(.dedicated-protector) .popover,
+.app:not(.dedicated-protector) .key-generation-card,
+.app:not(.dedicated-protector) .key-verify-card,
+.app:not(.dedicated-protector) .media-asset-card {
+  background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.025) 55%,rgba(255,255,255,.012)) !important;
+  border-color:var(--void-glass-border) !important;
+  box-shadow:0 18px 55px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.08);
+  -webkit-backdrop-filter:blur(22px) saturate(145%);
+  backdrop-filter:blur(22px) saturate(145%);
+  transition:background var(--void-smooth) var(--void-ease),border-color var(--void-smooth) ease,
+    box-shadow var(--void-smooth) var(--void-ease),transform var(--void-smooth) var(--void-ease);
+}
+.app:not(.dedicated-protector)>.topbar {
+  background:linear-gradient(120deg,rgba(30,30,34,.62),rgba(255,255,255,.07) 48%,rgba(18,18,22,.56)) !important;
+  box-shadow:0 16px 55px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.12);
+}
+/* A subtle light sweep on hover makes glass feel reflective without being distracting. */
+.app:not(.dedicated-protector) .script-card,
+.app:not(.dedicated-protector) .release-card,
+.app:not(.dedicated-protector) .panel,
+.app:not(.dedicated-protector) .settings-panel,
+.app:not(.dedicated-protector) .admin-card,
+.app:not(.dedicated-protector) .media-asset-card { position:relative; }
+.app:not(.dedicated-protector) .script-card:hover,
+.app:not(.dedicated-protector) .release-card:hover,
+.app:not(.dedicated-protector) .media-asset-card:hover {
+  border-color:rgba(255,255,255,.22) !important;
+  box-shadow:0 22px 60px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.13);
+}
+.app:not(.dedicated-protector) .nav-item,
+.app:not(.dedicated-protector) .sidebar a,
+.app:not(.dedicated-protector) .sidebar button {
+  position:relative; overflow:visible; border:1px solid rgba(255,255,255,.07);
+  border-radius:13px; background:rgba(255,255,255,.025);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+  -webkit-backdrop-filter:blur(14px) saturate(130%); backdrop-filter:blur(14px) saturate(130%);
+  transition:transform var(--void-smooth) var(--void-ease),background var(--void-smooth) ease,
+    border-color var(--void-smooth) ease,box-shadow var(--void-smooth) var(--void-ease),color var(--void-fast) ease;
+}
+.app:not(.dedicated-protector) .nav-item:hover,
+.app:not(.dedicated-protector) .sidebar a:hover,
+.app:not(.dedicated-protector) .sidebar button:hover {
+  transform:translateY(-1px); background:linear-gradient(135deg,rgba(255,255,255,.105),rgba(255,255,255,.035));
+  border-color:rgba(255,255,255,.18); box-shadow:0 10px 28px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.1);
+}
+.app:not(.dedicated-protector) .nav-item:active,
+.app:not(.dedicated-protector) .sidebar a:active,
+.app:not(.dedicated-protector) .sidebar button:active,
+.app:not(.dedicated-protector) button:active { transform:scale(.98); }
+.app:not(.dedicated-protector) :is(button,a,input,select,textarea,[tabindex]):focus-visible {
+  outline:2px solid rgba(255,255,255,.8); outline-offset:3px;
+}
+/* Smooth, distinct motion per navigation icon. */
+.app:not(.dedicated-protector) .nav-item .icon-svg,
+.app:not(.dedicated-protector) .sidebar a .icon-svg,
+.app:not(.dedicated-protector) .sidebar button .icon-svg {
+  transform-origin:50% 50%; transition:transform 360ms var(--void-ease),filter 240ms ease;
+}
+.app:not(.dedicated-protector) .nav-item:nth-child(1):hover .icon-svg {transform:translateY(-4px) scale(1.08)}
+.app:not(.dedicated-protector) .nav-item:nth-child(2):hover .icon-svg {transform:rotate(-7deg) translateY(-2px)}
+.app:not(.dedicated-protector) .nav-item:nth-child(3):hover .icon-svg {transform:translateY(3px) scaleY(.9)}
+.app:not(.dedicated-protector) .nav-item:nth-child(4):hover .icon-svg {transform:rotate(14deg) scale(1.12)}
+.app:not(.dedicated-protector) .nav-item:nth-child(5):hover .icon-svg {transform:translateX(3px) rotate(-6deg)}
+.app:not(.dedicated-protector) .nav-item:nth-child(6):hover .icon-svg {transform:rotate(-18deg) scale(1.06)}
+.app:not(.dedicated-protector) .nav-item:nth-child(7):hover .icon-svg {transform:translateX(4px) rotate(7deg)}
+.app:not(.dedicated-protector) .nav-item:nth-child(8):hover .icon-svg {transform:rotate(-22deg)}
+.app:not(.dedicated-protector) .nav-item:nth-child(9):hover .icon-svg {transform:scale(1.13) translateY(-1px)}
+.app:not(.dedicated-protector) .nav-item:nth-child(10):hover .icon-svg {animation:void-bell 560ms var(--void-ease) both}
+.app:not(.dedicated-protector) .nav-item:nth-child(11):hover .icon-svg {transform:translateY(-3px) scaleX(1.08)}
+.app:not(.dedicated-protector) .nav-item:nth-child(12):hover .icon-svg {transform:rotate(16deg)}
+.app:not(.dedicated-protector) .nav-item:nth-child(13):hover .icon-svg {transform:translateY(-4px) rotate(5deg)}
+.app:not(.dedicated-protector) .nav-item:nth-child(14):hover .icon-svg {transform:translateY(-3px) scale(1.06)}
+.app:not(.dedicated-protector) .nav-item:nth-child(15):hover .icon-svg {transform:rotate(-10deg) translateY(-1px)}
+.app:not(.dedicated-protector) .nav-item:nth-child(16):hover .icon-svg {transform:rotate(55deg) scale(1.05)}
+.app:not(.dedicated-protector) .nav-item:nth-child(17):hover .icon-svg {transform:translateY(-3px) rotate(4deg) scale(1.08)}
+.app:not(.dedicated-protector) .nav-item:hover .icon-svg,
+.app:not(.dedicated-protector) .sidebar a:hover .icon-svg,
+.app:not(.dedicated-protector) .sidebar button:hover .icon-svg {filter:drop-shadow(0 0 9px rgba(255,255,255,.24))}
+.app:not(.dedicated-protector) ::selection {background:rgba(255,255,255,.22);color:#fff}
+.app:not(.dedicated-protector) :is(input,select,textarea) {transition:border-color 220ms ease,box-shadow 220ms ease,background 220ms ease}
+.app:not(.dedicated-protector) :is(input,select,textarea):focus {border-color:rgba(255,255,255,.32);box-shadow:0 0 0 3px rgba(255,255,255,.055)}
+.app:not(.dedicated-protector) ::-webkit-scrollbar {width:9px;height:9px}
+.app:not(.dedicated-protector) ::-webkit-scrollbar-track {background:rgba(255,255,255,.018)}
+.app:not(.dedicated-protector) ::-webkit-scrollbar-thumb {background:rgba(255,255,255,.16);border:2px solid transparent;border-radius:99px;background-clip:padding-box}
+.app:not(.dedicated-protector) ::-webkit-scrollbar-thumb:hover {background:rgba(255,255,255,.28);background-clip:padding-box}
+@keyframes void-bell {0%,100%{transform:rotate(0)}20%{transform:rotate(10deg)}40%{transform:rotate(-10deg)}60%{transform:rotate(7deg)}80%{transform:rotate(-4deg)}}
+@media(hover:none) {
+  .app:not(.dedicated-protector) .nav-item:hover,
+  .app:not(.dedicated-protector) .sidebar a:hover,
+  .app:not(.dedicated-protector) .sidebar button:hover {transform:none}
+}
+@media(prefers-reduced-motion:reduce) {
+  .app:not(.dedicated-protector) *,
+  .app:not(.dedicated-protector) *::before,
+  .app:not(.dedicated-protector) *::after {scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
