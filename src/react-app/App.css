@@ -1318,3 +1318,118 @@ img { height: auto; }
 @keyframes void-signal-blink{0%,100%{opacity:.6;box-shadow:0 0 5px rgba(255,255,255,.4)}50%{opacity:1;box-shadow:0 0 14px rgba(255,255,255,.95)}}
 @media(max-width:520px){.void-pulse-popup{right:10px;bottom:10px;width:calc(100vw - 20px);padding:15px;border-radius:18px}.void-pulse-popup h3{font-size:18px}.void-pulse-actions .button{flex:1;justify-content:center}}
 @media(prefers-reduced-motion:reduce){.void-pulse-popup,.void-pulse-signal i{animation:none}}
+
+
+/* VOID CREAM / HYPERLOOP BRAND PASS */
+:root{
+  --void-cream:#deddd9;
+  --void-paper:#e9e8e3;
+  --void-ink:#191919;
+  --void-ink-soft:#292927;
+  --accent:#191919;
+  --accent-color:#191919;
+}
+html,body,#root{background:var(--void-cream)!important;color:var(--void-ink)!important}
+body,.app,.main-shell,.page-content,.content-area,.workspace,.main-content{
+  background-color:var(--void-cream)!important;
+  color:var(--void-ink)!important;
+}
+body{
+  background-image:radial-gradient(ellipse at 50% -15%,rgba(255,255,255,.72),transparent 58%)!important;
+}
+/* HyperLoop is the display typeface across the interface; provide the licensed font file at /fonts/HYPERLOOP.otf. */
+@font-face{
+  font-family:"HyperLoop";
+  src:url("/fonts/HYPERLOOP.otf") format("opentype");
+  font-style:normal;
+  font-weight:400 900;
+  font-display:swap;
+}
+:where(html,body,button,input,textarea,select,.app,.app *){
+  font-family:"HyperLoop","Arial Rounded MT Bold",system-ui,sans-serif!important;
+}
+:where(h1,h2,h3,h4,h5,h6,.brand-word,.section-kicker,.nav-drawer,.sidebar,.button,.script-card,.panel,.topbar){
+  letter-spacing:.015em;
+}
+.app,.app .main-shell,.app .page-content,.app .panel,.app .script-card,.app .auth-card,
+.app .admin-content,.app .admin-sidebar,.app .sidebar,.app .nav-drawer,.app .topbar,
+.app .script-detail,.app .key-generation-card,.app .key-verify-card{
+  color:var(--void-ink)!important;
+}
+.app .topbar,.app .sidebar,.app .nav-drawer,.app .admin-sidebar,.app .panel,
+.app .script-card,.app .auth-card,.app .script-detail,.app .key-generation-card,
+.app .key-verify-card,.app .profile-chip,.app .icon-button,.app .community-button,
+.app .menu-trigger,.app .button-ghost,.app .admin-content .panel{
+  background-color:rgba(249,248,244,.78)!important;
+  border-color:rgba(25,25,25,.13)!important;
+  box-shadow:0 14px 40px rgba(35,32,25,.055)!important;
+  backdrop-filter:blur(22px);
+}
+.app .topbar{background:rgba(233,232,227,.82)!important}
+.app .sidebar a,.app .sidebar button,.app .nav-drawer button,.app .nav-drawer a,
+.app .admin-sidebar button,.app .brand,.app .topbar-right,.app .muted,
+.app .script-card p,.app .panel p,.app .section-kicker,.app .footer,
+.app .system-status,.app .profile-chip,.app .button-ghost,.app label{
+  color:rgba(25,25,25,.76)!important;
+}
+.app input,.app textarea,.app select,.app .form-label input,.app .form-label textarea,
+.app .form-label select,.app .key-flow-controls input,.app .key-flow-controls select{
+  background:rgba(255,255,255,.65)!important;
+  color:#191919!important;
+  border-color:rgba(25,25,25,.2)!important;
+}
+.app input::placeholder,.app textarea::placeholder{color:rgba(25,25,25,.42)!important}
+.app .button-light,.app .void-home-primary,.app button.button-light{
+  background:#191919!important;color:#f1f0eb!important;border-color:#191919!important;
+}
+.app .button-ghost,.app .icon-button,.app .menu-trigger,.app .community-button{
+  color:#191919!important;
+}
+.app .sidebar .active,.app .sidebar button.active,.app .admin-sidebar .admin-side-active,
+.app .nav-drawer .drawer-links .drawer-link.selected{
+  background:rgba(25,25,25,.09)!important;border-color:rgba(25,25,25,.24)!important;color:#111!important;
+}
+.app .script-card-art,.app .loader-output,.app .void-key-chamber,.app .void-core,
+.app .void-home-hero,.app .void-command,.app .chatgpt-topbar,.app .chatgpt-auth-state{
+  background-color:#d3d2cd!important;color:#191919!important;
+}
+.app .void-home-hero{
+  border-color:rgba(25,25,25,.15)!important;
+  background:radial-gradient(circle at 50% 0,rgba(255,255,255,.82),transparent 45%),#deddd9!important;
+  box-shadow:0 22px 65px rgba(25,25,25,.07),inset 0 1px rgba(255,255,255,.8)!important;
+}
+.app .void-home-hero:before{opacity:.22}
+.app .void-home-hero-grid{
+  opacity:.18;
+  background-image:linear-gradient(rgba(25,25,25,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(25,25,25,.08) 1px,transparent 1px)!important;
+}
+.app .void-home-hero h1,.app .void-home-hero h1 em,.app .void-home-hero p,
+.app .void-home-eyebrow,.app .void-home-stats strong,.app .void-home-stats span,
+.app .void-home-feature-strip b,.app .void-home-feature-strip small{
+  color:#191919!important;text-shadow:none!important;
+}
+.app .void-home-actions button,.app .void-home-feature-strip article,.app .void-feature-icon{
+  color:#191919!important;background:rgba(255,255,255,.42)!important;border-color:rgba(25,25,25,.14)!important;
+}
+.app .void-home-actions .void-home-primary{background:#191919!important;color:#efeee9!important}
+.app .brand img{width:64px!important;height:64px!important;max-width:none!important;object-fit:contain;filter:none!important}
+.app .brand{gap:15px!important}
+.app .brand-word{font-size:clamp(18px,2vw,25px)!important;font-weight:900!important;letter-spacing:.06em!important;color:#191919!important}
+.app .footer-brand img{width:54px!important;height:54px!important;object-fit:contain;filter:none!important}
+.app .brand-dot{color:#191919!important}
+.app .nav-drawer .drawer-links .drawer-link.key-system-nav,
+.app .nav-drawer .drawer-links .drawer-link.key-system-nav:hover,
+.app .nav-drawer .drawer-links .drawer-link.key-system-nav:focus-visible{
+  background:#191919!important;color:#f0efea!important;border-color:#191919!important;
+}
+.app .nav-drawer .drawer-links .drawer-link.key-system-nav svg{color:#f0efea!important}
+.app .nav-drawer .drawer-links .drawer-link.key-system-nav.selected,
+.app .nav-drawer .drawer-links .drawer-link.key-system-nav.selected:hover{
+  background:#191919!important;color:#f0efea!important;
+}
+.app .void-home-hero .void-home-actions .void-home-secondary kbd{color:#191919!important;border-color:rgba(25,25,25,.2)!important}
+@media(max-width:640px){
+  .app .brand img{width:50px!important;height:50px!important}
+  .app .brand-word{font-size:16px!important;letter-spacing:.025em!important}
+  .app .void-home-hero-inner{padding:52px 18px 30px}
+}
