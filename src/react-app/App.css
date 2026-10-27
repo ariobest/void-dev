@@ -1076,3 +1076,46 @@ img { height: auto; }
 .app .void-roblox-lookup small { color:var(--muted,#aaa);overflow-wrap:anywhere; }
 .app .void-roblox-verified { margin-left:auto;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#d7f8e4;border:1px solid rgba(114,220,157,.28);background:rgba(60,170,105,.12);border-radius:999px;padding:6px 9px; }
 @media(max-width:560px){.app .void-roblox-lookup{align-items:flex-start;flex-wrap:wrap}.app .void-roblox-verified{margin-left:50px}}
+
+
+/* Void roadmap — editorial timeline and polished milestone workspace */
+.roadmap-page{position:relative;isolation:isolate;overflow:hidden;padding:clamp(22px,4vw,42px)!important;background:linear-gradient(145deg,rgba(20,20,23,.94),rgba(8,8,10,.88))!important;border:1px solid rgba(255,255,255,.12)!important}
+.roadmap-page:before{content:"";position:absolute;inset:0 0 auto;height:220px;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 12% 0%,rgba(255,255,255,.095),transparent 62%),radial-gradient(ellipse at 90% 0%,rgba(125,145,255,.08),transparent 55%)}
+.roadmap-page>.section-kicker{display:inline-flex;align-items:center;gap:9px;letter-spacing:.22em;font-size:10px;color:rgba(255,255,255,.62)}
+.roadmap-page>.section-kicker:before{content:"";width:18px;height:1px;background:currentColor}
+.roadmap-page>h2{font-size:clamp(28px,4vw,44px);letter-spacing:-.055em;line-height:1.05;margin:12px 0}
+.roadmap-page>.muted{max-width:620px;line-height:1.7;color:rgba(255,255,255,.57)}
+.roadmap-page-list{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:30px}
+.roadmap-item{position:relative;min-width:0;overflow:hidden;padding:22px;border:1px solid rgba(255,255,255,.105);border-radius:19px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));transition:transform .25s ease,border-color .25s ease,background .25s ease}
+.roadmap-item:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.23);background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025))}
+.roadmap-label{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:17px}
+.roadmap-label strong{font-size:16px;line-height:1.45;letter-spacing:-.025em;color:#f6f6f7}
+.roadmap-label>span{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:52px;padding:6px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.055);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff}
+.roadmap-item .progress-track{height:5px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.09)}
+.roadmap-item .progress-track>div{height:100%;border-radius:inherit;background:linear-gradient(90deg,#777,#f8f8f8);box-shadow:0 0 16px rgba(255,255,255,.18);transition:width .5s cubic-bezier(.22,1,.36,1)}
+.roadmap-item>p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0 8px;font-size:11px;font-weight:650;letter-spacing:.045em;text-transform:uppercase;color:rgba(255,255,255,.65)}
+.roadmap-item>p:after{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.5)}
+.roadmap-item>small{display:block;color:rgba(255,255,255,.53);font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.roadmap-admin-panel{overflow:hidden}
+.roadmap-admin-panel>.panel-heading{align-items:center;gap:16px}
+.roadmap-admin-panel>.panel-heading h2{font-size:clamp(23px,3vw,32px);letter-spacing:-.045em}
+.roadmap-admin-panel>p.muted{max-width:760px;line-height:1.7}
+.roadmap-create-form{position:relative;overflow:hidden;border-color:rgba(255,255,255,.14);background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.015))}
+.roadmap-create-form:before{content:"NEW MILESTONE";display:block;width:max-content;margin-bottom:10px;padding:5px 8px;border:1px solid rgba(255,255,255,.13);border-radius:6px;color:rgba(255,255,255,.58);font-size:9px;font-weight:750;letter-spacing:.16em}
+.roadmap-create-form h3{font-size:20px;letter-spacing:-.035em}
+.roadmap-admin-list{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:14px}
+.roadmap-admin-item{min-width:0;overflow:hidden;border-color:rgba(255,255,255,.11);background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012));transition:border-color .2s ease,transform .2s ease}
+.roadmap-admin-item:hover{border-color:rgba(255,255,255,.2);transform:translateY(-2px)}
+.roadmap-admin-item .panel-heading{padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.roadmap-admin-item .panel-heading h3{font-size:17px;line-height:1.4;overflow-wrap:anywhere}
+.roadmap-admin-item .section-kicker{font-size:9px;letter-spacing:.16em;color:rgba(255,255,255,.5)}
+.roadmap-admin-item .status-badge{padding:6px 9px;border:1px solid rgba(255,255,255,.13);border-radius:99px;background:rgba(255,255,255,.055);font-size:10px}
+.roadmap-admin-item .form-label,.roadmap-create-form .form-label{display:block;font-size:10px;letter-spacing:.11em;color:rgba(255,255,255,.56)}
+.roadmap-admin-item .form-label input:not([type=range]),.roadmap-admin-item .form-label textarea,.roadmap-admin-item .form-label select,.roadmap-create-form .form-label input:not([type=range]),.roadmap-create-form .form-label textarea,.roadmap-create-form .form-label select{margin-top:8px;letter-spacing:normal;font-size:13px}
+.roadmap-admin-item input[type=range],.roadmap-create-form input[type=range]{height:5px;cursor:pointer}
+.roadmap-admin-item .setting-row,.roadmap-create-form .setting-row{background:rgba(0,0,0,.16);font-size:12px}
+.roadmap-admin-item .button-row{padding-top:12px;border-top:1px solid rgba(255,255,255,.075)}
+.roadmap-admin-item .button-row .button{min-height:36px}
+@media(max-width:900px){.roadmap-admin-list{grid-template-columns:1fr}.roadmap-page-list{grid-template-columns:1fr}}
+@media(max-width:560px){.roadmap-page{padding:20px!important}.roadmap-page-list{margin-top:22px;gap:10px}.roadmap-item{padding:17px;border-radius:15px}.roadmap-label strong{font-size:15px}.roadmap-create-form,.roadmap-admin-item{padding:15px}.roadmap-admin-item .panel-heading{flex-wrap:wrap}.roadmap-admin-item .button-row .button{flex:1}.roadmap-admin-panel>.panel-heading{align-items:flex-start;flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.roadmap-item,.roadmap-admin-item,.roadmap-item .progress-track>div{transition:none}}
