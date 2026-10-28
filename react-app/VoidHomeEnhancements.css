@@ -1,0 +1,62 @@
+
+.void-home-hero{position:relative;isolation:isolate;overflow:hidden;margin:18px 0 22px;border:1px solid rgba(255,255,255,.13);border-radius:30px;min-height:410px;background:radial-gradient(circle at 50% 0,rgba(255,255,255,.16),transparent 38%),radial-gradient(circle at 50% 50%,rgba(255,255,255,.045),transparent 62%),#070707;box-shadow:0 30px 100px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.06)}
+.void-home-hero:before{content:"";position:absolute;inset:-30%;z-index:-2;background:conic-gradient(from 180deg,transparent 0 34%,rgba(255,255,255,.08),transparent 44% 100%);animation:void-hero-spin 16s linear infinite}
+.void-home-hero-grid{position:absolute;inset:0;z-index:-1;opacity:.3;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(to bottom,black,transparent 80%)}
+.void-home-orbit{position:absolute;border:1px solid rgba(255,255,255,.1);border-radius:50%;filter:blur(.2px);pointer-events:none}.orbit-a{width:520px;height:520px;left:50%;top:-370px;transform:translateX(-50%);box-shadow:0 0 90px rgba(255,255,255,.07)}.orbit-b{width:760px;height:760px;left:50%;top:-490px;transform:translateX(-50%);opacity:.45}
+.void-home-hero-inner{position:relative;z-index:2;display:flex;align-items:center;flex-direction:column;text-align:center;padding:74px 24px 42px}.void-home-eyebrow{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.5);font-size:10px;font-weight:800;letter-spacing:.24em}.void-home-eyebrow>span:first-child{width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 14px #fff}.void-live-dot{width:5px;height:5px;border-radius:50%;background:#a8ffbf;box-shadow:0 0 10px #a8ffbf}.void-home-hero h1{margin:20px 0 10px;font-size:clamp(48px,8vw,92px);line-height:.92;letter-spacing:-.075em}.void-home-hero h1 em{font-style:normal;color:#fff;text-shadow:0 0 35px rgba(255,255,255,.2)}.void-home-hero p{max-width:620px;margin:0;color:rgba(255,255,255,.55);font-size:14px;line-height:1.7}.void-home-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}.void-home-actions button{border:1px solid rgba(255,255,255,.15);border-radius:13px;padding:12px 16px;background:rgba(255,255,255,.045);color:#fff;font:inherit;font-size:12px;cursor:pointer;transition:transform .2s,border-color .2s,background .2s,box-shadow .2s}.void-home-actions button:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.38);background:rgba(255,255,255,.08);box-shadow:0 12px 35px rgba(0,0,0,.25)}.void-home-primary{background:#f5f5f5!important;color:#050505!important;font-weight:800}.void-home-actions kbd{margin-left:8px;padding:3px 6px;border:1px solid rgba(0,0,0,.16);border-radius:6px;background:rgba(0,0,0,.08);font-size:9px}.void-home-secondary kbd{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06)}
+.void-home-stats{display:flex;gap:28px;margin-top:35px;flex-wrap:wrap;justify-content:center}.void-home-stats div{display:flex;flex-direction:column;gap:5px}.void-home-stats strong{font-size:10px;letter-spacing:.14em}.void-home-stats span{color:rgba(255,255,255,.38);font-size:10px}
+.void-home-feature-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 24px}.void-home-feature-strip article{display:flex;align-items:center;gap:11px;min-width:0;padding:15px;border:1px solid rgba(255,255,255,.09);border-radius:17px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015));transition:transform .2s,border-color .2s,background .2s}.void-home-feature-strip article:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.055)}.void-feature-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border:1px solid rgba(255,255,255,.12);border-radius:11px;background:rgba(255,255,255,.05);font-size:16px}.void-home-feature-strip article div{display:flex;min-width:0;flex-direction:column;gap:4px}.void-home-feature-strip b{font-size:11px}.void-home-feature-strip small{color:rgba(255,255,255,.42);font-size:9px;line-height:1.4}
+.void-copy-toast{position:fixed;z-index:1000;right:22px;bottom:22px;padding:11px 14px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(15,15,15,.88);backdrop-filter:blur(16px);box-shadow:0 15px 50px rgba(0,0,0,.35);font-size:11px;animation:void-toast-in .22s ease both}.void-copy-toast b{margin-left:5px;color:#c7ffd7}
+.void-command-backdrop{position:fixed;z-index:999;inset:0;display:grid;place-items:start center;padding:12vh 18px 30px;background:rgba(0,0,0,.7);backdrop-filter:blur(12px)}.void-command{width:min(620px,100%);overflow:hidden;border:1px solid rgba(255,255,255,.16);border-radius:20px;background:#0a0a0a;box-shadow:0 35px 120px rgba(0,0,0,.75)}.void-command-search{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid rgba(255,255,255,.09)}.void-command-search>span{color:rgba(255,255,255,.45);font-size:18px}.void-command-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:13px}.void-command-search kbd,.void-command-body kbd{padding:4px 7px;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:rgba(255,255,255,.4);font-size:9px}.void-command-body{padding:10px}.void-command-label{padding:8px 9px;color:rgba(255,255,255,.35);font-size:9px;font-weight:800;letter-spacing:.14em}.void-command-body button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 10px;border:0;border-radius:9px;background:transparent;color:#fff;text-align:left;font:inherit;font-size:11px;cursor:pointer}.void-command-body button:hover{background:rgba(255,255,255,.07)}.void-command-empty{padding:30px 10px;text-align:center;color:rgba(255,255,255,.4);font-size:12px}
+@keyframes void-hero-spin{to{transform:rotate(360deg)}}@keyframes void-toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:850px){.void-home-feature-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.void-home-hero{min-height:370px;border-radius:22px}.void-home-hero-inner{padding:58px 18px 34px}.void-home-feature-strip{grid-template-columns:1fr}.void-home-hero h1{font-size:48px}.void-home-actions{flex-direction:column;width:100%;max-width:340px}.void-home-actions button{width:100%}}
+@media(prefers-reduced-motion:reduce){.void-home-hero:before{animation:none}.void-home-feature-strip article,.void-home-actions button{transition:none}}
+
+
+/* Void interaction polish: purposeful icon motion, key-flow progress, and Roblox lookup */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .app button:not(:disabled) > svg, .app a.button > svg,
+  .app button:not(:disabled) > .icon, .app a.button > .icon,
+  .community-button > svg, .void-media-button > svg {
+    transform-origin: 50% 50%;
+    transition: transform .28s cubic-bezier(.2,.8,.2,1), filter .28s ease;
+  }
+  .app button:not(:disabled):hover > svg, .app a.button:hover > svg,
+  .app button:not(:disabled):hover > .icon, .app a.button:hover > .icon,
+  .community-button:hover > svg, .void-media-button:hover > svg {
+    transform: translateY(-1px) rotate(-8deg) scale(1.09);
+    filter: drop-shadow(0 0 7px rgba(255,255,255,.22));
+  }
+  .app button:hover svg[data-icon="clock"], .app a.button:hover svg[data-icon="clock"] { animation: void-clock-tick .65s ease-in-out; }
+  .app button:hover svg[data-icon="shield"], .app a.button:hover svg[data-icon="shield"] { animation: void-shield-guard .55s cubic-bezier(.2,.8,.2,1); }
+  .app .key-hero .button:hover > svg, .app .key-generator .button:hover > svg { animation: void-key-spark .7s ease-in-out; }
+  .app .button, .app button.button, .app a.button, .community-button, .void-media-button {
+    transition: transform .24s cubic-bezier(.2,.8,.2,1), border-color .24s ease, box-shadow .24s ease, background .24s ease;
+  }
+  .app .button:hover:not(:disabled), .app button.button:hover:not(:disabled),
+  .app a.button:hover, .community-button:hover, .void-media-button:hover { transform: translateY(-2px); }
+  .app .key-hero, .app .key-generator { animation: void-key-card-enter .55s cubic-bezier(.2,.8,.2,1) both; }
+  .app .key-generator { animation-delay: .08s; }
+  .app .key-flow-preview-progress, .app .key-progress, .app .progress-track, .app .key-countdown-progress { overflow: hidden; isolation: isolate; }
+  .app .key-flow-preview-progress > i, .app .key-progress > i, .app .progress-track > i, .app .key-countdown-progress > i { position: relative; overflow: hidden; border-radius: inherit; }
+  .app .key-flow-preview-progress > i::after, .app .key-progress > i::after, .app .progress-track > i::after, .app .key-countdown-progress > i::after {
+    content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.52), transparent);
+    animation: void-progress-sheen 2.1s ease-in-out infinite;
+  }
+}
+@keyframes void-clock-tick { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-18deg)} 55%{transform:rotate(12deg)} 78%{transform:rotate(-5deg)} }
+@keyframes void-shield-guard { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-2px) scale(1.12)} 65%{transform:translateY(1px) scale(.96)} }
+@keyframes void-key-spark { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 40%{transform:translateY(-2px) rotate(-10deg) scale(1.14)} 70%{transform:translateY(0) rotate(6deg) scale(1.05)} }
+@keyframes void-key-card-enter { from{opacity:0;transform:translateY(12px) scale(.99);filter:blur(4px)} to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)} }
+@keyframes void-progress-sheen { to{transform:translateX(120%)} }
+.void-roblox-avatar { display:grid;place-items:center;overflow:hidden;width:54px;height:54px;flex:0 0 54px;border:1px solid rgba(255,255,255,.22);border-radius:17px;background:rgba(255,255,255,.06);box-shadow:0 0 24px rgba(255,255,255,.07); }
+.void-roblox-avatar img { display:block;width:100%;height:100%;object-fit:cover; }
+.void-roblox-profile-link { color:inherit;text-decoration:none; }
+.void-roblox-profile-link:hover { text-decoration:underline;text-underline-offset:4px; }
+.void-execution-user { transition:background .2s ease,border-color .2s ease,transform .2s ease; }
+.void-execution-user:hover { background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.18);transform:translateY(-1px); }
+@media (prefers-reduced-motion: reduce) {
+  .app .key-hero,.app .key-generator { animation:none!important; }
+  .app .key-flow-preview-progress > i::after,.app .key-progress > i::after,.app .progress-track > i::after,.app .key-countdown-progress > i::after { animation:none!important; }
+}
