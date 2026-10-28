@@ -1616,3 +1616,125 @@ body{
 .app a.button:hover svg {
   color: inherit;
 }
+/* VOID DEVELOPMENT — TWO-COLOR DARK THEME */
+:root {
+  color-scheme: dark;
+  --accent: #434343;
+  --surface: #000000;
+  --surface-2: #434343;
+  --border: #434343;
+  --text: #ffffff;
+  --muted: #b0b0b0;
+  --wash: #434343;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #000000 !important;
+  color: #ffffff;
+  color-scheme: dark;
+}
+
+.app,
+.app:not(.dedicated-protector) {
+  color: #ffffff !important;
+  background: #000000 !important;
+  --accent: #434343 !important;
+  --surface: #000000 !important;
+  --surface-2: #434343 !important;
+  --border: #434343 !important;
+  --text: #ffffff !important;
+  --muted: #b0b0b0 !important;
+  --wash: #434343 !important;
+}
+
+.app :is(
+  .topbar,
+  .nav-drawer,
+  .sidebar,
+  .panel,
+  .stat-card,
+  .script-card,
+  .release-card,
+  .settings-panel,
+  .admin-card,
+  .auth-card,
+  .modal,
+  .cookie-card,
+  .theme-option,
+  .script-detail-modal
+) {
+  color: #ffffff !important;
+  background: #434343 !important;
+  border-color: #434343 !important;
+  box-shadow: 0 12px 36px #000000 !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.app :is(
+  h1, h2, h3, h4, h5, h6,
+  p, span, strong, label, a, li,
+  small, div, button
+) {
+  text-shadow: none;
+}
+
+.app :is(input, textarea, select, option) {
+  color: #ffffff !important;
+  background: #000000 !important;
+  border-color: #434343 !important;
+}
+
+.app .button-light {
+  color: #ffffff !important;
+  background: #434343 !important;
+  border-color: #434343 !important;
+}
+
+.app :is(
+  .button-ghost,
+  .icon-button,
+  .menu-trigger,
+  .profile-chip,
+  .drawer-link,
+  .tab-button
+) {
+  color: #ffffff !important;
+  background: #000000 !important;
+  border-color: #434343 !important;
+}
+
+.app .gradient-title {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: none !important;
+}
+
+.app .ambient {
+  filter: grayscale(1) !important;
+}
+
+.app button:hover:not(:disabled),
+.app a.button:hover {
+  border-color: #434343 !important;
+}
+
+.app .progress-track,
+.app .void-progress,
+.app .key-flow-preview-progress {
+  background: #000000 !important;
+}
+
+.app .progress-track > div,
+.app .void-progress i,
+.app .key-flow-preview-progress i {
+  background: #434343 !important;
+  box-shadow: none !important;
+}
+
+.app svg {
+  color: inherit;
+}
