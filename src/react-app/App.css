@@ -1923,3 +1923,18 @@ body,
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Last-pass contrast and icon visibility correction for the dark design system. */
+.app:not(.dedicated-protector) :is(div,span,p,strong,small,label,a,button,li,summary,dt,dd,th,td,legend,figcaption,blockquote,em,b,code,pre,h1,h2,h3,h4,h5,h6) {
+  color: #ffffff;
+}
+.app:not(.dedicated-protector) :is(.muted,.hero-subtitle,.hero-meta,.eyebrow,.section-kicker,.stat-top>span:first-child,.stat-card>small,.drawer-heading,.drawer-user small,.system-status,.footer>span,.help-item p,.cookie-footnote,.form-hint,.field-hint) {
+  color: #c2c2c2 !important;
+}
+.app:not(.dedicated-protector) svg { color: inherit; }
+.app:not(.dedicated-protector) :is(.icon,.icon svg,.drawer-link svg,.menu-trigger svg,.button svg,.icon-button svg,.tab-button svg,.community-button svg) {
+  color: #ffffff !important;
+  opacity: 1;
+  visibility: visible;
+}
