@@ -110,6 +110,34 @@ app.get("/api/track-execution", async (c) => {
   }
 });
 
+app.get("/api/roblox-user/:username", async (c) => {
+  const username = (c.req.param("username") || "").trim();
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) return c.json({ error: "Invalid Roblox username." }, 400, { "Cache-Control": "no-store" });
+  try {
+    const lookup = await fetch("https://users.roblox.com/v1/usernames/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ usernames: [username], excludeBannedUsers: false }),
+    });
+    if (!lookup.ok) return c.json({ error: "Roblox account lookup unavailable." }, 502, { "Cache-Control": "no-store" });
+    const result = await lookup.json() as { data?: Array<{ id: number; name: string; displayName: string }> };
+    const profile = result.data?.[0];
+    if (!profile?.id) return c.json({ error: "Roblox account not found." }, 404, { "Cache-Control": "no-store" });
+    const thumbs = await fetch("https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" + profile.id + "&size=150x150&format=Png&isCircular=false", { headers: { "Accept": "application/json" } });
+    let thumbnailUrl = "";
+    if (thumbs.ok) {
+      const thumbnailData = await thumbs.json() as { data?: Array<{ imageUrl?: string; state?: string }> };
+      thumbnailUrl = thumbnailData.data?.[0]?.imageUrl || "";
+    }
+    return c.json({ id: profile.id, name: profile.name, displayName: profile.displayName, thumbnailUrl }, 200, {
+      "Cache-Control": "public, max-age=300",
+      "X-Content-Type-Options": "nosniff",
+    });
+  } catch {
+    return c.json({ error: "Roblox account lookup is temporarily unavailable." }, 502, { "Cache-Control": "no-store" });
+  }
+});
+
 app.get("/api/media/:slug", async (c) => {
   const slug = (c.req.param("slug") || "").trim();
   if (!/^[a-z0-9-]{3,100}$/.test(slug)) return c.json({ error: "Invalid file link." }, 400);
